@@ -61,18 +61,12 @@ func (g *Game) Update() error {
 	}
 
 	for i, b := range g.tiles.bullets {
-		sin, cos := math.Sincos(b.rotation)
-		dx := -float32(cos) * BULLET_SPEED
-		dy := -float32(sin) * BULLET_SPEED
-		b.x += dx
-		b.y += dy
-
 		if !(b.x > 0 && b.x < SCREEN_SIZE_WIDTH && b.y > 0 && b.y < SCREEN_SIZE_HEIGHT) {
 			delete(g.tiles.bullets, i)
 			continue
 		}
 
-		g.tiles.bullets[i] = g.tiles.ProcessBulletToWallCollision(b, dx, dy)
+		g.tiles.bullets[i] = g.tiles.ProcessBullet(b)
 	}
 
 	return nil

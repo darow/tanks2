@@ -41,6 +41,28 @@ func (t *Tiles) getNextID() uint16 {
 	return TILE_ID_SEQUENCE
 }
 
+func (b *Bullet) getShifts() (float32, float32) {
+	sin, cos := math.Sincos(b.rotation)
+	dx := -float32(cos) * BULLET_SPEED
+	dy := -float32(sin) * BULLET_SPEED
+
+	return dx, dy
+}
+
+func (b *Bullet) processBulletRotation(isCollision, isHorizontal bool) Bullet {
+	if isCollision {
+		if isHorizontal {
+			b.rotation = -b.rotation
+
+			return *b
+		}
+
+		b.rotation = math.Remainder(math.Pi-b.rotation, 2*math.Pi)
+	}
+
+	return *b
+}
+
 type Character struct {
 	x, y     float32
 	rotation float64
@@ -51,22 +73,14 @@ type Wall struct {
 	horizontal bool
 }
 
-func (t *Tiles) ProcessBulletToWallCollision(b Bullet, dx, dy float32) Bullet {
+func (t *Tiles) ProcessBullet(b Bullet) Bullet {
+	dx, dy := b.getShifts()
+	b.x += dx
+	b.y += dy
+
 	isCollision, isHorizontal := t.DetectBulletToWallCollision(b, dx, dy)
 
-	if isCollision {
-		if isHorizontal {
-			b.rotation = -b.rotation
-
-			return b
-		}
-
-		if b.rotation < math.Pi {
-			b.rotation = math.Pi - b.rotation
-		} else {
-			b.rotation = b.rotation - math.Pi
-		}
-	}
+	b = b.processBulletRotation(isCollision, isHorizontal)
 
 	return b
 }
@@ -82,7 +96,7 @@ func (t *Tiles) DetectBulletToWallCollision(b Bullet, dx, dy float32) (isCollisi
 		if _, ok := t.walls[wallToCollide]; ok {
 			isCollision, isHorizontal = true, false
 			//end of wall
-			if math.Abs(float64(int(b.y+float32(math.Abs(float64(dy))))%WALL_HEIGHT)) <= WALL_WIDTH {
+			if math.Abs(float64(int(b.y)%WALL_HEIGHT)) <= BULLET_SPEED {
 				isHorizontal = true
 			}
 
@@ -101,7 +115,7 @@ func (t *Tiles) DetectBulletToWallCollision(b Bullet, dx, dy float32) (isCollisi
 			isCollision, isHorizontal = true, true
 
 			//end of wall
-			if math.Abs(float64(int(b.x+float32(math.Abs(float64(dx))))%WALL_HEIGHT)) <= WALL_WIDTH {
+			if math.Abs(float64(int(b.x)%WALL_HEIGHT)) <= BULLET_SPEED {
 				isHorizontal = false
 			}
 
