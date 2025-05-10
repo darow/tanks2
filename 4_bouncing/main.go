@@ -27,10 +27,15 @@ func main() {
 	ebiten.SetWindowSize(SCREEN_SIZE_WIDTH, SCREEN_SIZE_HEIGHT)
 	ebiten.SetWindowTitle("rotating_try")
 
-	firstWall := Wall{
+	wall1 := Wall{
 		x:          1,
-		y:          2,
+		y:          1,
 		horizontal: false,
+	}
+	wall2 := Wall{
+		x:          1,
+		y:          1,
+		horizontal: true,
 	}
 
 	game := &Game{
@@ -42,7 +47,7 @@ func main() {
 		boardImage: ebiten.NewImage(SCREEN_SIZE_WIDTH, SCREEN_SIZE_HEIGHT),
 		tiles: Tiles{
 			bullets: make(map[uint16]Bullet),
-			walls:   map[Wall]struct{}{firstWall: {}},
+			walls:   map[Wall]struct{}{wall1: {}, wall2: {}},
 		},
 	}
 
