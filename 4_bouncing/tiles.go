@@ -96,9 +96,8 @@ func (t *Tiles) DetectBulletToWallCollision(b Bullet, dx, dy float32) (isCollisi
 		if _, ok := t.walls[wallToCollide]; ok {
 			isCollision, isHorizontal = true, false
 			//end of wall
-			yInCell := float64(int(b.y) % WALL_HEIGHT)
-			if yInCell <= BULLET_SPEED || WALL_HEIGHT-yInCell <= BULLET_SPEED {
-
+			yInWall := int(b.y) % WALL_HEIGHT
+			if yInWall <= BULLET_SPEED && dy > 0 || WALL_HEIGHT-yInWall <= BULLET_SPEED && dy < 0 {
 				isHorizontal = true
 			}
 
@@ -117,8 +116,8 @@ func (t *Tiles) DetectBulletToWallCollision(b Bullet, dx, dy float32) (isCollisi
 			isCollision, isHorizontal = true, true
 
 			//end of wall
-			xInCell := float64(int(b.x) % WALL_HEIGHT)
-			if xInCell <= BULLET_SPEED || WALL_HEIGHT-xInCell <= BULLET_SPEED {
+			xInWall := int(b.x) % WALL_HEIGHT
+			if xInWall <= BULLET_SPEED && dx > 0 || WALL_HEIGHT-xInWall <= BULLET_SPEED && dx < 0 {
 				isHorizontal = false
 			}
 
