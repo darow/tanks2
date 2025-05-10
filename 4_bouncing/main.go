@@ -25,7 +25,7 @@ func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
 	ebiten.SetWindowSize(SCREEN_SIZE_WIDTH, SCREEN_SIZE_HEIGHT)
-	ebiten.SetWindowTitle("rotating_try")
+	ebiten.SetWindowTitle("tank")
 
 	wall1 := Wall{
 		x:          1,
@@ -33,7 +33,7 @@ func main() {
 		horizontal: false,
 	}
 	wall2 := Wall{
-		x:          1,
+		x:          2,
 		y:          1,
 		horizontal: true,
 	}

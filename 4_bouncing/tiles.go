@@ -51,6 +51,63 @@ type Wall struct {
 	horizontal bool
 }
 
-//type WallCoords struct {
-//	x, y uint16
-//}
+func (t *Tiles) ProcessBulletToWallCollision(b Bullet, dx, dy float32) Bullet {
+	isCollision, isHorizontal := t.DetectBulletToWallCollision(b, dx, dy)
+
+	if isCollision {
+		if isHorizontal {
+			b.rotation = -b.rotation
+
+			return b
+		}
+
+		if b.rotation < math.Pi {
+			b.rotation = math.Pi - b.rotation
+		} else {
+			b.rotation = b.rotation - math.Pi
+		}
+	}
+
+	return b
+}
+
+func (t *Tiles) DetectBulletToWallCollision(b Bullet, dx, dy float32) (isCollision, isHorizontal bool) {
+	if int(b.x)%WALL_HEIGHT <= WALL_WIDTH {
+		wallToCollide := Wall{
+			x:          uint16(math.Floor(float64(b.x / WALL_HEIGHT))),
+			y:          uint16(math.Floor(float64(b.y / WALL_HEIGHT))),
+			horizontal: false,
+		}
+
+		if _, ok := t.walls[wallToCollide]; ok {
+			isCollision, isHorizontal = true, false
+			//end of wall
+			if math.Abs(float64(int(b.y+float32(math.Abs(float64(dy))))%WALL_HEIGHT)) <= WALL_WIDTH {
+				isHorizontal = true
+			}
+
+			return
+		}
+	}
+
+	if int(b.y)%WALL_HEIGHT <= WALL_WIDTH {
+		wallToCollide := Wall{
+			x:          uint16(math.Floor(float64(b.x / WALL_HEIGHT))),
+			y:          uint16(math.Floor(float64(b.y / WALL_HEIGHT))),
+			horizontal: true,
+		}
+
+		if _, ok := t.walls[wallToCollide]; ok {
+			isCollision, isHorizontal = true, true
+
+			//end of wall
+			if math.Abs(float64(int(b.x+float32(math.Abs(float64(dx))))%WALL_HEIGHT)) <= WALL_WIDTH {
+				isHorizontal = false
+			}
+
+			return
+		}
+	}
+
+	return
+}

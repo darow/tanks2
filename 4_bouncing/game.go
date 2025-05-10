@@ -62,49 +62,17 @@ func (g *Game) Update() error {
 
 	for i, b := range g.tiles.bullets {
 		sin, cos := math.Sincos(b.rotation)
-		b.x -= float32(cos) * BULLET_SPEED
-		b.y -= float32(sin) * BULLET_SPEED
+		dx := -float32(cos) * BULLET_SPEED
+		dy := -float32(sin) * BULLET_SPEED
+		b.x += dx
+		b.y += dy
 
 		if !(b.x > 0 && b.x < SCREEN_SIZE_WIDTH && b.y > 0 && b.y < SCREEN_SIZE_HEIGHT) {
 			delete(g.tiles.bullets, i)
 			continue
 		}
 
-		// vertical wall collisions
-		if int(b.x)%WALL_HEIGHT <= WALL_WIDTH {
-			WallToCollide := Wall{
-				x:          uint16(math.Round(float64(b.x / WALL_HEIGHT))),
-				y:          uint16(math.Floor(float64(b.y / WALL_HEIGHT))),
-				horizontal: false,
-			}
-
-			if _, ok := g.tiles.walls[WallToCollide]; ok {
-				var newRotation float64
-				if b.rotation < math.Pi {
-					newRotation = math.Pi - b.rotation
-				} else {
-					newRotation = b.rotation - math.Pi
-				}
-
-				b.rotation = newRotation
-			}
-		}
-		// horizontal wall collisions
-		if int(b.y)%WALL_HEIGHT <= WALL_WIDTH {
-			WallToCollide := Wall{
-				x:          uint16(math.Round(float64(b.x / WALL_HEIGHT))),
-				y:          uint16(math.Floor(float64(b.y / WALL_HEIGHT))),
-				horizontal: true,
-			}
-
-			if _, ok := g.tiles.walls[WallToCollide]; ok {
-
-				b.rotation = -b.rotation
-			}
-		}
-
-		g.tiles.bullets[i] = b
-
+		g.tiles.bullets[i] = g.tiles.ProcessBulletToWallCollision(b, dx, dy)
 	}
 
 	return nil
