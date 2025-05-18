@@ -5,6 +5,7 @@ import (
 	"image"
 	_ "image/png"
 	"log"
+
 	images "myebiten/resources"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -38,10 +39,19 @@ func main() {
 		horizontal: true,
 	}
 
+	cs := ControlSettings{
+		rotateRightButton:  ebiten.KeyRight,
+		rotateLeftButton:   ebiten.KeyLeft,
+		moveForwardButton:  ebiten.KeyUp,
+		moveBackwardButton: ebiten.KeyDown,
+		shootButton:        ebiten.KeySpace,
+	}
+
 	game := &Game{
 		character: Character{
-			x: 400,
-			y: 400,
+			ControlSettings: cs,
+			x:               400,
+			y:               400,
 		},
 
 		boardImage: ebiten.NewImage(SCREEN_SIZE_WIDTH, SCREEN_SIZE_HEIGHT),

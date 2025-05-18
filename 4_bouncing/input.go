@@ -10,6 +10,8 @@ type Input struct {
 	rotateLeft   bool
 	moveForward  bool
 	moveBackward bool
+
+	ControlSettings
 }
 
 func (inp *Input) Update() {

@@ -3,6 +3,8 @@ package main
 import (
 	"log"
 	"math"
+
+	"github.com/hajimehoshi/ebiten/v2"
 )
 
 const (
@@ -66,6 +68,18 @@ func (b *Bullet) processBulletRotation(isCollision, isHorizontal bool) Bullet {
 type Character struct {
 	x, y     float32
 	rotation float64
+
+	input Input
+
+	ControlSettings
+}
+
+type ControlSettings struct {
+	rotateRightButton  ebiten.Key
+	rotateLeftButton   ebiten.Key
+	moveForwardButton  ebiten.Key
+	moveBackwardButton ebiten.Key
+	shootButton        ebiten.Key
 }
 
 type Wall struct {

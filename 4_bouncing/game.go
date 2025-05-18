@@ -10,8 +10,6 @@ import (
 )
 
 type Game struct {
-	input Input
-
 	character Character
 	tiles     Tiles
 
