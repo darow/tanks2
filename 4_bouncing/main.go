@@ -39,19 +39,38 @@ func main() {
 		horizontal: true,
 	}
 
-	cs := ControlSettings{
+	cs2 := ControlSettings{
+		rotateRightButton:  ebiten.KeyD,
+		rotateLeftButton:   ebiten.KeyA,
+		moveForwardButton:  ebiten.KeyW,
+		moveBackwardButton: ebiten.KeyS,
+		shootButton:        ebiten.KeyControl,
+	}
+
+	cs1 := ControlSettings{
 		rotateRightButton:  ebiten.KeyRight,
 		rotateLeftButton:   ebiten.KeyLeft,
 		moveForwardButton:  ebiten.KeyUp,
 		moveBackwardButton: ebiten.KeyDown,
-		shootButton:        ebiten.KeySpace,
+		shootButton:        ebiten.KeySlash,
 	}
 
 	game := &Game{
-		character: Character{
-			ControlSettings: cs,
-			x:               400,
-			y:               400,
+		characters: []*Character{
+			{
+				input: Input{
+					ControlSettings: cs1,
+				},
+				x: 400,
+				y: 400,
+			},
+			{
+				input: Input{
+					ControlSettings: cs2,
+				},
+				x: 700,
+				y: 500,
+			},
 		},
 
 		boardImage: ebiten.NewImage(SCREEN_SIZE_WIDTH, SCREEN_SIZE_HEIGHT),

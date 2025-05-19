@@ -1,7 +1,6 @@
 package main
 
 import (
-	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
 
@@ -14,32 +13,32 @@ type Input struct {
 	ControlSettings
 }
 
-func (inp *Input) Update() {
-	if inpututil.IsKeyJustPressed(ebiten.KeyArrowRight) {
-		inp.rotateRight = true
+func (in *Input) Update() {
+	if inpututil.IsKeyJustPressed(in.rotateRightButton) {
+		in.rotateRight = true
 	}
-	if inp.rotateRight && inpututil.IsKeyJustReleased(ebiten.KeyArrowRight) {
-		inp.rotateRight = false
-	}
-
-	if inpututil.IsKeyJustPressed(ebiten.KeyArrowLeft) {
-		inp.rotateLeft = true
-	}
-	if inp.rotateLeft && inpututil.IsKeyJustReleased(ebiten.KeyArrowLeft) {
-		inp.rotateLeft = false
+	if in.rotateRight && inpututil.IsKeyJustReleased(in.rotateRightButton) {
+		in.rotateRight = false
 	}
 
-	if inpututil.IsKeyJustPressed(ebiten.KeyArrowUp) {
-		inp.moveBackward = true
+	if inpututil.IsKeyJustPressed(in.rotateLeftButton) {
+		in.rotateLeft = true
 	}
-	if inp.moveBackward && inpututil.IsKeyJustReleased(ebiten.KeyArrowUp) {
-		inp.moveBackward = false
+	if in.rotateLeft && inpututil.IsKeyJustReleased(in.rotateLeftButton) {
+		in.rotateLeft = false
 	}
 
-	if inpututil.IsKeyJustPressed(ebiten.KeyArrowDown) {
-		inp.moveForward = true
+	if inpututil.IsKeyJustPressed(in.moveForwardButton) {
+		in.moveBackward = true
 	}
-	if inp.moveForward && inpututil.IsKeyJustReleased(ebiten.KeyArrowDown) {
-		inp.moveForward = false
+	if in.moveBackward && inpututil.IsKeyJustReleased(in.moveForwardButton) {
+		in.moveBackward = false
+	}
+
+	if inpututil.IsKeyJustPressed(in.moveBackwardButton) {
+		in.moveForward = true
+	}
+	if in.moveForward && inpututil.IsKeyJustReleased(in.moveBackwardButton) {
+		in.moveForward = false
 	}
 }

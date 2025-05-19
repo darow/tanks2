@@ -2,16 +2,14 @@ package main
 
 import (
 	"image/color"
-	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/hajimehoshi/ebiten/v2/vector"
 )
 
 type Game struct {
-	character Character
-	tiles     Tiles
+	characters []*Character
+	tiles      Tiles
 
 	boardImage *ebiten.Image
 }
@@ -21,41 +19,13 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 }
 
 func (g *Game) Update() error {
-	g.input.Update()
-
-	if g.input.rotateRight {
-		g.character.rotation += CHARACTER_ROTATION_SPEED
-	}
-
-	if g.input.rotateLeft {
-		g.character.rotation -= CHARACTER_ROTATION_SPEED
-	}
-
-	if g.input.moveForward {
-		sin, cos := math.Sincos(g.character.rotation)
-		g.character.x += float32(cos) * CHARACTER_SPEED
-		g.character.y += float32(sin) * CHARACTER_SPEED
-	}
-
-	if g.input.moveBackward {
-		sin, cos := math.Sincos(g.character.rotation)
-		g.character.x -= float32(cos) * CHARACTER_SPEED
-		g.character.y -= float32(sin) * CHARACTER_SPEED
-	}
-
-	if inpututil.IsKeyJustPressed(ebiten.KeySpace) {
-		sin, cos := math.Sincos(g.character.rotation)
-		x := g.character.x - float32(cos)*CHARACTER_WIDTH/2
-		y := g.character.y - float32(sin)*CHARACTER_WIDTH/2
-
-		b := Bullet{
-			id:       g.tiles.getNextID(),
-			x:        x,
-			y:        y,
-			rotation: g.character.rotation,
+	for i := range g.characters {
+		g.characters[i].input.Update()
+		newBullet := g.characters[i].Update()
+		if newBullet != nil {
+			newBullet.id = g.tiles.getNextID()
+			g.tiles.bullets[newBullet.id] = *newBullet
 		}
-
-		g.tiles.bullets[b.id] = b
 	}
 
 	for i, b := range g.tiles.bullets {
@@ -74,12 +44,6 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	//if g.boardImage == nil {
 	//	g.boardImage = ebiten.NewImage(SCREEN_SIZE_WIDTH, SCREEN_SIZE_HEIGHT)
 	//}
-
-	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Reset()
-	op.GeoM.Translate(-CHARACTER_WIDTH/2, -CHARACTER_WIDTH/2)
-	op.GeoM.Rotate(g.character.rotation)
-	op.GeoM.Translate(float64(g.character.x), float64(g.character.y))
 
 	g.boardImage.Clear()
 	g.boardImage.Fill(color.RGBA{0xca, 0xca, 0xff, 0xff})
@@ -101,7 +65,14 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 	}
 
-	g.boardImage.DrawImage(CHARACTER_IMAGE, op)
+	for _, c := range g.characters {
+		op := &ebiten.DrawImageOptions{}
+		op.GeoM.Reset()
+		op.GeoM.Translate(-CHARACTER_WIDTH/2, -CHARACTER_WIDTH/2)
+		op.GeoM.Rotate(c.rotation)
+		op.GeoM.Translate(float64(c.x), float64(c.y))
+		g.boardImage.DrawImage(CHARACTER_IMAGE, op)
+	}
 
 	screen.Clear()
 	screen.DrawImage(g.boardImage, &ebiten.DrawImageOptions{})

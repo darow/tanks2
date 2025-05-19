@@ -5,6 +5,7 @@ import (
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
 
 const (
@@ -70,8 +71,6 @@ type Character struct {
 	rotation float64
 
 	input Input
-
-	ControlSettings
 }
 
 type ControlSettings struct {
@@ -80,6 +79,44 @@ type ControlSettings struct {
 	moveForwardButton  ebiten.Key
 	moveBackwardButton ebiten.Key
 	shootButton        ebiten.Key
+}
+
+func (c *Character) Update() *Bullet {
+	if c.input.rotateRight {
+		c.rotation += CHARACTER_ROTATION_SPEED
+	}
+
+	if c.input.rotateLeft {
+		c.rotation -= CHARACTER_ROTATION_SPEED
+	}
+
+	if c.input.moveForward {
+		sin, cos := math.Sincos(c.rotation)
+		c.x += float32(cos) * CHARACTER_SPEED
+		c.y += float32(sin) * CHARACTER_SPEED
+	}
+
+	if c.input.moveBackward {
+		sin, cos := math.Sincos(c.rotation)
+		c.x -= float32(cos) * CHARACTER_SPEED
+		c.y -= float32(sin) * CHARACTER_SPEED
+	}
+
+	if inpututil.IsKeyJustPressed(c.input.shootButton) {
+		sin, cos := math.Sincos(c.rotation)
+		x := c.x - float32(cos)*CHARACTER_WIDTH/2
+		y := c.y - float32(sin)*CHARACTER_WIDTH/2
+
+		b := Bullet{
+			x:        x,
+			y:        y,
+			rotation: c.rotation,
+		}
+
+		return &b
+	}
+
+	return nil
 }
 
 type Wall struct {
