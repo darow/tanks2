@@ -107,8 +107,8 @@ func (c *Character) Update() *Bullet {
 
 	if inpututil.IsKeyJustPressed(c.input.shootButton) {
 		sin, cos := math.Sincos(c.rotation)
-		x := c.x - float32(cos)*(CHARACTER_WIDTH/2+BULLET_SPEED)
-		y := c.y - float32(sin)*(CHARACTER_WIDTH/2+BULLET_SPEED)
+		x := c.x - float32(cos)*(float32(c.currentWidth)/2+BULLET_SPEED)
+		y := c.y - float32(sin)*(float32(c.currentWidth)/2+BULLET_SPEED)
 
 		b := Bullet{
 			x:        x,
@@ -195,8 +195,8 @@ func (t *Tiles) DetectBulletToCharacterCollision(b Bullet, c *Character) (isColl
 	yLocal := -dx*sin + dy*cos
 
 	// Находим ближайшую точку на прямоугольнике
-	halfW := float64(CHARACTER_WIDTH / 2)
-	halfH := float64(CHARACTER_WIDTH / 2)
+	halfW := float64(c.currentWidth / 2)
+	halfH := float64(c.currentWidth / 2)
 
 	closestX := math.Max(-halfW, math.Min(xLocal, halfW))
 	closestY := math.Max(-halfH, math.Min(yLocal, halfH))
