@@ -19,7 +19,8 @@ const (
 )
 
 var (
-	CHARACTER_IMAGE *ebiten.Image
+	CHARACTER_IMAGE_TO_RESIZE image.Image
+	CHARACTER_IMAGE           *ebiten.Image
 )
 
 func main() {
@@ -39,12 +40,20 @@ func main() {
 		horizontal: true,
 	}
 
+	var err error
+	CHARACTER_IMAGE_TO_RESIZE, _, err = image.Decode(bytes.NewReader(images.Tank_png))
+	if err != nil {
+		log.Fatal(err)
+	}
+	resizedCharacterImage := resize.Resize(CHARACTER_WIDTH, 0, CHARACTER_IMAGE_TO_RESIZE, resize.Lanczos3)
+	CHARACTER_IMAGE = ebiten.NewImageFromImage(resizedCharacterImage)
+
 	cs2 := ControlSettings{
 		rotateRightButton:  ebiten.KeyD,
 		rotateLeftButton:   ebiten.KeyA,
 		moveForwardButton:  ebiten.KeyW,
 		moveBackwardButton: ebiten.KeyS,
-		shootButton:        ebiten.KeyControl,
+		shootButton:        ebiten.KeySpace,
 	}
 
 	cs1 := ControlSettings{
@@ -63,6 +72,9 @@ func main() {
 				},
 				x: 400,
 				y: 400,
+
+				currentWidth: CHARACTER_WIDTH,
+				charImg:      CHARACTER_IMAGE,
 			},
 			{
 				input: Input{
@@ -70,22 +82,18 @@ func main() {
 				},
 				x: 700,
 				y: 500,
+
+				currentWidth: CHARACTER_WIDTH,
+				charImg:      CHARACTER_IMAGE,
 			},
 		},
 
 		boardImage: ebiten.NewImage(SCREEN_SIZE_WIDTH, SCREEN_SIZE_HEIGHT),
 		tiles: Tiles{
-			bullets: make(map[uint16]Bullet),
+			bullets: make(map[int]Bullet),
 			walls:   map[Wall]struct{}{wall1: {}, wall2: {}},
 		},
 	}
-
-	charImg, _, err := image.Decode(bytes.NewReader(images.Tank_png))
-	if err != nil {
-		log.Fatal(err)
-	}
-	resizedMouseImage := resize.Resize(CHARACTER_WIDTH, 0, charImg, resize.Lanczos3)
-	CHARACTER_IMAGE = ebiten.NewImageFromImage(resizedMouseImage)
 
 	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)

@@ -5,6 +5,7 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/vector"
+	"github.com/nfnt/resize"
 )
 
 type Game struct {
@@ -35,6 +36,19 @@ func (g *Game) Update() error {
 		}
 
 		g.tiles.bullets[i] = g.tiles.ProcessBullet(b)
+	}
+
+	for bulletKey, bullet := range g.tiles.bullets {
+		for charIndex, char := range g.characters {
+			isCollision := g.tiles.DetectBulletToCharacterCollision(bullet, char)
+			if isCollision {
+				delete(g.tiles.bullets, bulletKey)
+				g.characters[charIndex].currentWidth--
+
+				resizedCharacterImage := resize.Resize(g.characters[charIndex].currentWidth, 0, CHARACTER_IMAGE_TO_RESIZE, resize.Lanczos3)
+				g.characters[charIndex].charImg = ebiten.NewImageFromImage(resizedCharacterImage)
+			}
+		}
 	}
 
 	return nil
@@ -71,7 +85,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		op.GeoM.Translate(-CHARACTER_WIDTH/2, -CHARACTER_WIDTH/2)
 		op.GeoM.Rotate(c.rotation)
 		op.GeoM.Translate(float64(c.x), float64(c.y))
-		g.boardImage.DrawImage(CHARACTER_IMAGE, op)
+		g.boardImage.DrawImage(c.charImg, op)
 	}
 
 	screen.Clear()

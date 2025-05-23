@@ -17,20 +17,20 @@ const (
 	WALL_WIDTH               = 10
 )
 
-var TILE_ID_SEQUENCE = uint16(0)
+var TILE_ID_SEQUENCE = 0
 
 type Tiles struct {
-	bullets map[uint16]Bullet
+	bullets map[int]Bullet
 	walls   map[Wall]struct{}
 }
 
 type Bullet struct {
-	id       uint16
+	id       int
 	x, y     float32
 	rotation float64
 }
 
-func (t *Tiles) getNextID() uint16 {
+func (t *Tiles) getNextID() int {
 	TILE_ID_SEQUENCE++
 
 	if len(t.bullets) >= math.MaxUint16 {
@@ -70,6 +70,9 @@ type Character struct {
 	x, y     float32
 	rotation float64
 
+	charImg      *ebiten.Image
+	currentWidth uint
+
 	input Input
 }
 
@@ -104,8 +107,8 @@ func (c *Character) Update() *Bullet {
 
 	if inpututil.IsKeyJustPressed(c.input.shootButton) {
 		sin, cos := math.Sincos(c.rotation)
-		x := c.x - float32(cos)*CHARACTER_WIDTH/2
-		y := c.y - float32(sin)*CHARACTER_WIDTH/2
+		x := c.x - float32(cos)*(CHARACTER_WIDTH/2+BULLET_SPEED)
+		y := c.y - float32(sin)*(CHARACTER_WIDTH/2+BULLET_SPEED)
 
 		b := Bullet{
 			x:        x,
@@ -179,4 +182,30 @@ func (t *Tiles) DetectBulletToWallCollision(b Bullet, dx, dy float32) (isCollisi
 	}
 
 	return
+}
+
+func (t *Tiles) DetectBulletToCharacterCollision(b Bullet, c *Character) (isCollision bool) {
+	// Сдвигаем снаряд в локальную систему координат прямоугольника
+	dx := float64(b.x - c.x)
+	dy := float64(b.y - c.y)
+
+	sin, cos := math.Sincos(c.rotation)
+
+	xLocal := dx*cos + dy*sin
+	yLocal := -dx*sin + dy*cos
+
+	// Находим ближайшую точку на прямоугольнике
+	halfW := float64(CHARACTER_WIDTH / 2)
+	halfH := float64(CHARACTER_WIDTH / 2)
+
+	closestX := math.Max(-halfW, math.Min(xLocal, halfW))
+	closestY := math.Max(-halfH, math.Min(yLocal, halfH))
+
+	// Вычисляем расстояние от снаряда до ближайшей точки
+	dxLocal := xLocal - closestX
+	dyLocal := yLocal - closestY
+	distanceSq := dxLocal*dxLocal + dyLocal*dyLocal
+
+	// Сравниваем в квадратах, чтоб не вычислять корень из distanceSq
+	return distanceSq <= BULLET_RADIUS*BULLET_RADIUS
 }
