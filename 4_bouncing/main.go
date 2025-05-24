@@ -13,9 +13,10 @@ import (
 )
 
 const (
-	SCREEN_SIZE_WIDTH  = 2000
-	SCREEN_SIZE_HEIGHT = 1200
-	CHARACTER_WIDTH    = 70
+	SCREEN_SIZE_WIDTH        = 2000
+	SCREEN_SIZE_HEIGHT       = 1200
+	CHARACTER_WIDTH          = 70
+	FEATURE_DECREASING_TANKS = false
 )
 
 var (
@@ -41,7 +42,7 @@ func main() {
 	}
 
 	var err error
-	CHARACTER_IMAGE_TO_RESIZE, _, err = image.Decode(bytes.NewReader(images.Tank_png))
+	CHARACTER_IMAGE_TO_RESIZE, _, err = image.Decode(bytes.NewReader(images.Img_png))
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -13,7 +13,7 @@ const (
 	CHARACTER_ROTATION_SPEED = 0.05
 	CHARACTER_SPEED          = 3
 	BULLET_SPEED             = 4
-	WALL_HEIGHT              = 200
+	WALL_HEIGHT              = 200 // equal to cell size in labyrinth
 	WALL_WIDTH               = 10
 )
 
@@ -26,7 +26,7 @@ type Tiles struct {
 
 type Bullet struct {
 	id       int
-	x, y     float32
+	x, y     float64
 	rotation float64
 }
 
@@ -44,10 +44,10 @@ func (t *Tiles) getNextID() int {
 	return TILE_ID_SEQUENCE
 }
 
-func (b *Bullet) getShifts() (float32, float32) {
+func (b *Bullet) getShifts() (float64, float64) {
 	sin, cos := math.Sincos(b.rotation)
-	dx := -float32(cos) * BULLET_SPEED
-	dy := -float32(sin) * BULLET_SPEED
+	dx := -cos * BULLET_SPEED
+	dy := -sin * BULLET_SPEED
 
 	return dx, dy
 }
@@ -67,7 +67,7 @@ func (b *Bullet) processBulletRotation(isCollision, isHorizontal bool) Bullet {
 }
 
 type Character struct {
-	x, y     float32
+	x, y     float64
 	rotation float64
 
 	charImg      *ebiten.Image
@@ -84,7 +84,9 @@ type ControlSettings struct {
 	shootButton        ebiten.Key
 }
 
-func (c *Character) Update() *Bullet {
+func (c *Character) Update(walls map[Wall]struct{}) *Bullet {
+	oldX, oldY, oldRotation := c.x, c.y, c.rotation
+
 	if c.input.rotateRight {
 		c.rotation += CHARACTER_ROTATION_SPEED
 	}
@@ -95,20 +97,28 @@ func (c *Character) Update() *Bullet {
 
 	if c.input.moveForward {
 		sin, cos := math.Sincos(c.rotation)
-		c.x += float32(cos) * CHARACTER_SPEED
-		c.y += float32(sin) * CHARACTER_SPEED
+		c.x += cos * CHARACTER_SPEED
+		c.y += sin * CHARACTER_SPEED
 	}
 
 	if c.input.moveBackward {
 		sin, cos := math.Sincos(c.rotation)
-		c.x -= float32(cos) * CHARACTER_SPEED
-		c.y -= float32(sin) * CHARACTER_SPEED
+		c.x -= cos * CHARACTER_SPEED * 2 / 3
+		c.y -= sin * CHARACTER_SPEED * 2 / 3
+	}
+
+	for w := range walls {
+		if c.detectWallCollision(w) {
+			c.detectWallCollision(w)
+			c.x, c.y, c.rotation = oldX, oldY, oldRotation
+			break
+		}
 	}
 
 	if inpututil.IsKeyJustPressed(c.input.shootButton) {
 		sin, cos := math.Sincos(c.rotation)
-		x := c.x - float32(cos)*(float32(c.currentWidth)/2+BULLET_SPEED)
-		y := c.y - float32(sin)*(float32(c.currentWidth)/2+BULLET_SPEED)
+		x := c.x - cos*(float64(c.currentWidth)/2+BULLET_SPEED)
+		y := c.y - sin*(float64(c.currentWidth)/2+BULLET_SPEED)
 
 		b := Bullet{
 			x:        x,
@@ -122,9 +132,80 @@ func (c *Character) Update() *Bullet {
 	return nil
 }
 
+func (c *Character) getCorners() []Vec2 {
+	// Получаем точки углов персонажа (с учётом поворота)
+	hw := float64(c.currentWidth) / 2
+	hh := float64(c.currentWidth) / 2
+
+	return []Vec2{
+		rotatePoint(c.x-hw, c.y-hh, c.x, c.y, c.rotation),
+		rotatePoint(c.x+hw, c.y-hh, c.x, c.y, c.rotation),
+		rotatePoint(c.x+hw, c.y+hh, c.x, c.y, c.rotation),
+		rotatePoint(c.x-hw, c.y+hh, c.x, c.y, c.rotation),
+	}
+}
+
+func (c *Character) detectWallCollisionOld(w Wall) bool {
+	// 1. Центр стены
+	halfWallW := float64(WALL_WIDTH) / 2
+	halfWallH := float64(WALL_HEIGHT) / 2
+	if w.horizontal {
+		halfWallW, halfWallH = halfWallH, halfWallW
+	}
+
+	wallCenterX := float64(w.x)*WALL_HEIGHT + halfWallW
+	wallCenterY := float64(w.y)*WALL_HEIGHT + halfWallH
+
+	// 2. Смещение стены относительно персонажа
+	dx := float64(wallCenterX - float64(c.x))
+	dy := float64(wallCenterY - float64(c.y))
+
+	// 3. Переводим в систему координат персонажа (учитывая поворот)
+	xLocal := dx*math.Cos(c.rotation) + dy*math.Sin(c.rotation)
+	yLocal := -dx*math.Sin(c.rotation) + dy*math.Cos(c.rotation)
+
+	// 4. Переводим размеры
+	halfCharW := float64(c.currentWidth) / 2
+	halfCharH := float64(c.currentWidth) / 2
+
+	// 5. Находим смещения по осям
+	// Разница между центрами в локальной системе координат
+	deltaX := math.Abs(xLocal)
+	deltaY := math.Abs(yLocal)
+
+	// 6. Проверяем пересечение по осям
+	return deltaX <= (halfCharW+halfWallW) && deltaY <= (halfCharH+halfWallH)
+}
+
 type Wall struct {
 	x, y       uint16
 	horizontal bool
+}
+
+func (w *Wall) GetCenter() (x, y float32) {
+	x = WALL_WIDTH/2 + float32(w.x)*WALL_HEIGHT
+	y = WALL_HEIGHT/2 + float32(w.y)*WALL_HEIGHT
+	if w.horizontal {
+		x, y = y, x
+	}
+
+	return x, y
+}
+
+func (w *Wall) GetCorners() []Vec2 {
+	var height, width float64 = WALL_HEIGHT, WALL_WIDTH
+	if w.horizontal {
+		height, width = width, height
+	}
+
+	corners := []Vec2{
+		{float64(w.x) * WALL_HEIGHT, float64(w.y) * WALL_HEIGHT},
+		{float64(w.x)*WALL_HEIGHT + width, float64(w.y) * WALL_HEIGHT},
+		{float64(w.x) * WALL_HEIGHT, float64(w.y)*WALL_HEIGHT + height},
+		{float64(w.x)*WALL_HEIGHT + width, float64(w.y)*WALL_HEIGHT + height},
+	}
+
+	return corners
 }
 
 func (t *Tiles) ProcessBullet(b Bullet) Bullet {
@@ -139,7 +220,7 @@ func (t *Tiles) ProcessBullet(b Bullet) Bullet {
 	return b
 }
 
-func (t *Tiles) DetectBulletToWallCollision(b Bullet, dx, dy float32) (isCollision, isHorizontal bool) {
+func (t *Tiles) DetectBulletToWallCollision(b Bullet, dx, dy float64) (isCollision, isHorizontal bool) {
 	if int(b.x)%WALL_HEIGHT <= WALL_WIDTH {
 		wallToCollide := Wall{
 			x:          uint16(math.Floor(float64(b.x / WALL_HEIGHT))),
@@ -184,7 +265,7 @@ func (t *Tiles) DetectBulletToWallCollision(b Bullet, dx, dy float32) (isCollisi
 	return
 }
 
-func (t *Tiles) DetectBulletToCharacterCollision(b Bullet, c *Character) (isCollision bool) {
+func (t *Tiles) DetectBulletCharacterCollision(b Bullet, c *Character) (isCollision bool) {
 	// Сдвигаем снаряд в локальную систему координат прямоугольника
 	dx := float64(b.x - c.x)
 	dy := float64(b.y - c.y)

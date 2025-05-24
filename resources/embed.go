@@ -13,4 +13,7 @@ var (
 
 	//go:embed tank1.png
 	Tank_png []byte
+
+	//go:embed img.png
+	Img_png []byte
 )

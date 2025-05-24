@@ -22,7 +22,7 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 func (g *Game) Update() error {
 	for i := range g.characters {
 		g.characters[i].input.Update()
-		newBullet := g.characters[i].Update()
+		newBullet := g.characters[i].Update(g.tiles.walls)
 		if newBullet != nil {
 			newBullet.id = g.tiles.getNextID()
 			g.tiles.bullets[newBullet.id] = *newBullet
@@ -40,13 +40,15 @@ func (g *Game) Update() error {
 
 	for bulletKey, bullet := range g.tiles.bullets {
 		for charIndex, char := range g.characters {
-			isCollision := g.tiles.DetectBulletToCharacterCollision(bullet, char)
+			isCollision := g.tiles.DetectBulletCharacterCollision(bullet, char)
 			if isCollision {
 				delete(g.tiles.bullets, bulletKey)
-				g.characters[charIndex].currentWidth--
 
-				resizedCharacterImage := resize.Resize(g.characters[charIndex].currentWidth, 0, CHARACTER_IMAGE_TO_RESIZE, resize.Lanczos3)
-				g.characters[charIndex].charImg = ebiten.NewImageFromImage(resizedCharacterImage)
+				if FEATURE_DECREASING_TANKS {
+					g.characters[charIndex].currentWidth--
+					resizedCharacterImage := resize.Resize(g.characters[charIndex].currentWidth, 0, CHARACTER_IMAGE_TO_RESIZE, resize.Lanczos3)
+					g.characters[charIndex].charImg = ebiten.NewImageFromImage(resizedCharacterImage)
+				}
 			}
 		}
 	}
@@ -63,7 +65,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	g.boardImage.Fill(color.RGBA{0xca, 0xca, 0xff, 0xff})
 
 	for _, b := range g.tiles.bullets {
-		vector.DrawFilledCircle(g.boardImage, b.x, b.y, float32(BULLET_RADIUS), color.RGBA{0x0f, 0x0f, 0x0f, 0xff}, false)
+		vector.DrawFilledCircle(g.boardImage, float32(b.x), float32(b.y), float32(BULLET_RADIUS), color.RGBA{0x0f, 0x0f, 0x0f, 0xff}, false)
 	}
 
 	for w, _ := range g.tiles.walls {
@@ -84,8 +86,14 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		op.GeoM.Reset()
 		op.GeoM.Translate(-float64(c.currentWidth)/2, -float64(c.currentWidth)/2)
 		op.GeoM.Rotate(c.rotation)
-		op.GeoM.Translate(float64(c.x), float64(c.y))
+		op.GeoM.Translate(c.x, c.y)
 		g.boardImage.DrawImage(c.charImg, op)
+
+		vector.DrawFilledCircle(g.boardImage, float32(c.x), float32(c.y), float32(1), color.RGBA{0x0f, 0x0f, 0x0f, 0xff}, false)
+		charCorners := c.getCorners()
+		for _, corner := range charCorners {
+			vector.DrawFilledCircle(g.boardImage, float32(corner.x), float32(corner.y), float32(1), color.RGBA{0x0f, 0x0f, 0x0f, 0xff}, false)
+		}
 	}
 
 	screen.Clear()
