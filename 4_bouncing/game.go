@@ -30,7 +30,7 @@ func (g *Game) Update() error {
 	}
 
 	for i, b := range g.tiles.bullets {
-		if !(b.x > 0 && b.x < SCREEN_SIZE_WIDTH && b.y > 0 && b.y < SCREEN_SIZE_HEIGHT) {
+		if !(b.x > 0 && b.x < float64(SCREEN_SIZE_WIDTH) && b.y > 0 && b.y < float64(SCREEN_SIZE_HEIGHT)) {
 			delete(g.tiles.bullets, i)
 			continue
 		}
@@ -76,9 +76,10 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 		vector.DrawFilledRect(g.boardImage, float32(w.x)*WALL_HEIGHT, float32(w.y)*WALL_HEIGHT, width, height, color.RGBA{0x0f, 0x0f, 0x0f, 0xff}, false)
 
-		vector.DrawFilledCircle(g.boardImage, float32(w.x)*WALL_HEIGHT, float32(w.y)*WALL_HEIGHT, 2, color.RGBA{0x00, 0xff, 0xff, 0xff}, false)
-		vector.DrawFilledCircle(g.boardImage, float32(w.x)*WALL_HEIGHT+WALL_WIDTH, float32(w.y)*WALL_HEIGHT+WALL_HEIGHT, 2, color.RGBA{0x00, 0xff, 0xff, 0xff}, false)
-
+		if DEBUG_MODE {
+			vector.DrawFilledCircle(g.boardImage, float32(w.x)*WALL_HEIGHT, float32(w.y)*WALL_HEIGHT, 2, color.RGBA{0x00, 0xff, 0xff, 0xff}, false)
+			vector.DrawFilledCircle(g.boardImage, float32(w.x)*WALL_HEIGHT+WALL_WIDTH, float32(w.y)*WALL_HEIGHT+WALL_HEIGHT, 2, color.RGBA{0x00, 0xff, 0xff, 0xff}, false)
+		}
 	}
 
 	for _, c := range g.characters {
@@ -90,9 +91,12 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		g.boardImage.DrawImage(c.charImg, op)
 
 		vector.DrawFilledCircle(g.boardImage, float32(c.x), float32(c.y), float32(1), color.RGBA{0x0f, 0x0f, 0x0f, 0xff}, false)
-		charCorners := c.getCorners()
-		for _, corner := range charCorners {
-			vector.DrawFilledCircle(g.boardImage, float32(corner.x), float32(corner.y), float32(1), color.RGBA{0x0f, 0x0f, 0x0f, 0xff}, false)
+
+		if DEBUG_MODE {
+			charCorners := c.getCorners()
+			for _, corner := range charCorners {
+				vector.DrawFilledCircle(g.boardImage, float32(corner.x), float32(corner.y), float32(1), color.RGBA{0x0f, 0x0f, 0x0f, 0xff}, false)
+			}
 		}
 	}
 

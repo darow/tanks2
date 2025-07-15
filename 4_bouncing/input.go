@@ -28,17 +28,17 @@ func (in *Input) Update() {
 		in.rotateLeft = false
 	}
 
-	if inpututil.IsKeyJustPressed(in.moveForwardButton) {
+	if inpututil.IsKeyJustPressed(in.moveBackwardButton) {
 		in.moveBackward = true
 	}
-	if in.moveBackward && inpututil.IsKeyJustReleased(in.moveForwardButton) {
+	if in.moveBackward && inpututil.IsKeyJustReleased(in.moveBackwardButton) {
 		in.moveBackward = false
 	}
 
-	if inpututil.IsKeyJustPressed(in.moveBackwardButton) {
+	if inpututil.IsKeyJustPressed(in.moveForwardButton) {
 		in.moveForward = true
 	}
-	if in.moveForward && inpututil.IsKeyJustReleased(in.moveBackwardButton) {
+	if in.moveForward && inpututil.IsKeyJustReleased(in.moveForwardButton) {
 		in.moveForward = false
 	}
 }
