@@ -12,14 +12,15 @@ const (
 	BULLET_RADIUS            = 4
 	CHARACTER_ROTATION_SPEED = 0.038
 	CHARACTER_SPEED          = 3.5
+	CHARACTER_WIDTH          = 40
 	BULLET_SPEED             = 4.3
-	WALL_HEIGHT              = 200 // equal to cell size in labyrinth
+	WALL_HEIGHT              = 100 // equal to cell size in labyrinth
 	WALL_WIDTH               = 10
 )
 
 var TILE_ID_SEQUENCE = 0
 
-type Tiles struct {
+type Things struct {
 	bullets map[int]Bullet
 	walls   map[Wall]struct{}
 }
@@ -30,7 +31,7 @@ type Bullet struct {
 	rotation float64
 }
 
-func (t *Tiles) getNextID() int {
+func (t *Things) getNextID() int {
 	TILE_ID_SEQUENCE++
 
 	if len(t.bullets) >= math.MaxUint16 {
@@ -208,7 +209,7 @@ func (w *Wall) GetCorners() []Point {
 	return corners
 }
 
-func (t *Tiles) ProcessBullet(b Bullet) Bullet {
+func (t *Things) ProcessBullet(b Bullet) Bullet {
 	dx, dy := b.getShifts()
 	b.x += dx
 	b.y += dy
@@ -220,7 +221,7 @@ func (t *Tiles) ProcessBullet(b Bullet) Bullet {
 	return b
 }
 
-func (t *Tiles) DetectBulletToWallCollision(b Bullet, dx, dy float64) (isCollision, isHorizontal bool) {
+func (t *Things) DetectBulletToWallCollision(b Bullet, dx, dy float64) (isCollision, isHorizontal bool) {
 	if int(b.x)%WALL_HEIGHT <= WALL_WIDTH {
 		wallToCollide := Wall{
 			x:          uint16(math.Floor(b.x / WALL_HEIGHT)),
@@ -265,7 +266,7 @@ func (t *Tiles) DetectBulletToWallCollision(b Bullet, dx, dy float64) (isCollisi
 	return
 }
 
-func (t *Tiles) DetectBulletCharacterCollision(b Bullet, c *Character) (isCollision bool) {
+func (t *Things) DetectBulletCharacterCollision(b Bullet, c *Character) (isCollision bool) {
 	// Сдвигаем снаряд в локальную систему координат прямоугольника
 	dx := b.x - c.x
 	dy := b.y - c.y

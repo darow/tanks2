@@ -8,41 +8,56 @@ import (
 	"github.com/nfnt/resize"
 )
 
+const (
+	STATE_MAP_CREATING = iota
+	STATE_GAME_RUNNING
+	STATE_GAME_ENDING
+)
+
 type Game struct {
+	state      int
+	boardSizeX int
+	boardSizeY int
+	things     Things
 	characters []*Character
-	tiles      Tiles
 
 	boardImage *ebiten.Image
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
-	return SCREEN_SIZE_WIDTH, SCREEN_SIZE_HEIGHT
+	return outsideWidth, outsideHeight
 }
 
 func (g *Game) Update() error {
+	switch g.state {
+	case STATE_MAP_CREATING:
+		g.CreateMap()
+		g.state = STATE_GAME_RUNNING
+	}
+
 	for i := range g.characters {
 		g.characters[i].input.Update()
-		newBullet := g.characters[i].Update(g.tiles.walls)
+		newBullet := g.characters[i].Update(g.things.walls)
 		if newBullet != nil {
-			newBullet.id = g.tiles.getNextID()
-			g.tiles.bullets[newBullet.id] = *newBullet
+			newBullet.id = g.things.getNextID()
+			g.things.bullets[newBullet.id] = *newBullet
 		}
 	}
 
-	for i, b := range g.tiles.bullets {
+	for i, b := range g.things.bullets {
 		if !(b.x > 0 && b.x < float64(SCREEN_SIZE_WIDTH) && b.y > 0 && b.y < float64(SCREEN_SIZE_HEIGHT)) {
-			delete(g.tiles.bullets, i)
+			delete(g.things.bullets, i)
 			continue
 		}
 
-		g.tiles.bullets[i] = g.tiles.ProcessBullet(b)
+		g.things.bullets[i] = g.things.ProcessBullet(b)
 	}
 
-	for bulletKey, bullet := range g.tiles.bullets {
+	for bulletKey, bullet := range g.things.bullets {
 		for charIndex, char := range g.characters {
-			isCollision := g.tiles.DetectBulletCharacterCollision(bullet, char)
+			isCollision := g.things.DetectBulletCharacterCollision(bullet, char)
 			if isCollision {
-				delete(g.tiles.bullets, bulletKey)
+				delete(g.things.bullets, bulletKey)
 
 				if FEATURE_DECREASING_TANKS {
 					g.characters[charIndex].currentWidth--
@@ -64,11 +79,11 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	g.boardImage.Clear()
 	g.boardImage.Fill(color.RGBA{0xca, 0xca, 0xff, 0xff})
 
-	for _, b := range g.tiles.bullets {
+	for _, b := range g.things.bullets {
 		vector.DrawFilledCircle(g.boardImage, float32(b.x), float32(b.y), float32(BULLET_RADIUS), color.RGBA{0x0f, 0x0f, 0x0f, 0xff}, false)
 	}
 
-	for w, _ := range g.tiles.walls {
+	for w, _ := range g.things.walls {
 		width, height := float32(WALL_WIDTH), float32(WALL_HEIGHT)
 		if w.horizontal {
 			width, height = WALL_HEIGHT, WALL_WIDTH

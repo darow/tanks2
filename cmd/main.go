@@ -16,8 +16,6 @@ import (
 const (
 	DEBUG_MODE               = false
 	FEATURE_DECREASING_TANKS = false
-
-	CHARACTER_WIDTH = 70
 )
 
 var (
@@ -25,7 +23,6 @@ var (
 	SCREEN_SIZE_HEIGHT = 1420
 
 	CHARACTER_IMAGE_TO_RESIZE image.Image
-	CHARACTER_IMAGE           *ebiten.Image
 )
 
 func main() {
@@ -35,24 +32,13 @@ func main() {
 	ebiten.SetWindowSize(SCREEN_SIZE_WIDTH, SCREEN_SIZE_HEIGHT)
 	ebiten.SetWindowTitle("tanks in maze")
 
-	wall1 := Wall{
-		x:          1,
-		y:          1,
-		horizontal: false,
-	}
-	wall2 := Wall{
-		x:          2,
-		y:          1,
-		horizontal: true,
-	}
-
 	var err error
 	CHARACTER_IMAGE_TO_RESIZE, _, err = image.Decode(bytes.NewReader(images.TankV2png))
 	if err != nil {
 		log.Fatal(err)
 	}
 	resizedCharacterImage := resize.Resize(CHARACTER_WIDTH, 0, CHARACTER_IMAGE_TO_RESIZE, resize.Lanczos3)
-	CHARACTER_IMAGE = ebiten.NewImageFromImage(resizedCharacterImage)
+	charImage := ebiten.NewImageFromImage(resizedCharacterImage)
 
 	cs2 := ControlSettings{
 		rotateRightButton:  ebiten.KeyD,
@@ -71,6 +57,27 @@ func main() {
 	}
 
 	game := &Game{
+		boardImage: ebiten.NewImage(SCREEN_SIZE_WIDTH, SCREEN_SIZE_HEIGHT),
+
+		boardSizeX: 10,
+		boardSizeY: 7,
+
+		things: Things{
+			bullets: make(map[int]Bullet, 20),
+			walls: map[Wall]struct{}{
+				Wall{
+					x:          1,
+					y:          1,
+					horizontal: false,
+				}: {},
+				Wall{
+					x:          2,
+					y:          1,
+					horizontal: true,
+				}: {},
+			},
+		},
+
 		characters: []*Character{
 			{
 				input: Input{
@@ -80,7 +87,7 @@ func main() {
 				y: 400,
 
 				currentWidth: CHARACTER_WIDTH,
-				charImg:      CHARACTER_IMAGE,
+				charImg:      charImage,
 			},
 			{
 				input: Input{
@@ -90,14 +97,8 @@ func main() {
 				y: 500,
 
 				currentWidth: CHARACTER_WIDTH,
-				charImg:      CHARACTER_IMAGE,
+				charImg:      charImage,
 			},
-		},
-
-		boardImage: ebiten.NewImage(SCREEN_SIZE_WIDTH, SCREEN_SIZE_HEIGHT),
-		tiles: Tiles{
-			bullets: make(map[int]Bullet),
-			walls:   map[Wall]struct{}{wall1: {}, wall2: {}},
 		},
 	}
 
