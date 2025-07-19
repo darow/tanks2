@@ -65,9 +65,24 @@ func (g *Game) CreateMap() {
 		}
 	}
 
-	g.characters[0].x = WALL_HEIGHT * 0.5
-	g.characters[0].y = WALL_HEIGHT * 0.5
+	for _, char := range g.charactersStash {
+		g.characters[char.id] = char
+	}
+	g.charactersStash = nil
 
-	g.characters[1].x = WALL_HEIGHT*(float64(g.boardSizeX)-1) + WALL_HEIGHT*0.5
-	g.characters[1].y = WALL_HEIGHT*(float64(g.boardSizeY)-1) + WALL_HEIGHT*0.5
+	spawnPlaces := []Point{
+		Point{x: WALL_HEIGHT * 0.5, y: WALL_HEIGHT * 0.5},
+		Point{x: WALL_HEIGHT*(float64(g.boardSizeX)-1) + WALL_HEIGHT*0.5, y: WALL_HEIGHT*(float64(g.boardSizeY)-1) + WALL_HEIGHT*0.5},
+	}
+
+	i := 0
+	for _, char := range g.characters {
+		if char == nil {
+			continue
+		}
+
+		char.x = spawnPlaces[i].x
+		char.y = spawnPlaces[i].y
+		i++
+	}
 }

@@ -10,11 +10,11 @@ import (
 
 const (
 	BULLET_RADIUS            = 4
-	CHARACTER_ROTATION_SPEED = 0.038
-	CHARACTER_SPEED          = 3.5
-	CHARACTER_WIDTH          = 40
-	BULLET_SPEED             = 4.3
-	WALL_HEIGHT              = 100 // equal to cell size in labyrinth
+	CHARACTER_ROTATION_SPEED = 0.05
+	CHARACTER_SPEED          = 5
+	CHARACTER_WIDTH          = 70
+	BULLET_SPEED             = 6
+	WALL_HEIGHT              = 200 // equal to cell size in labyrinth
 	WALL_WIDTH               = 10
 )
 
@@ -68,6 +68,8 @@ func (b *Bullet) processBulletRotation(isCollision, isHorizontal bool) Bullet {
 }
 
 type Character struct {
+	id int
+
 	x, y     float64
 	rotation float64
 

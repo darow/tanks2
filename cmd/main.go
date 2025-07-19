@@ -10,7 +10,10 @@ import (
 	images "myebiten/resources"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/examples/resources/fonts"
 	"github.com/nfnt/resize"
+	"golang.org/x/image/font"
+	"golang.org/x/image/font/opentype"
 )
 
 const (
@@ -19,6 +22,8 @@ const (
 )
 
 var (
+	REGULAR_FONT font.Face
+
 	SCREEN_SIZE_WIDTH  = 2560
 	SCREEN_SIZE_HEIGHT = 1420
 
@@ -33,6 +38,17 @@ func main() {
 	ebiten.SetWindowTitle("tanks in maze")
 
 	var err error
+	tt, err := opentype.Parse(fonts.MPlus1pRegular_ttf)
+	if err != nil {
+		log.Fatal(err)
+	}
+	const dpi = 72
+	REGULAR_FONT, err = opentype.NewFace(tt, &opentype.FaceOptions{
+		Size:    24,
+		DPI:     dpi,
+		Hinting: font.HintingFull,
+	})
+
 	CHARACTER_IMAGE_TO_RESIZE, _, err = image.Decode(bytes.NewReader(images.TankV2png))
 	if err != nil {
 		log.Fatal(err)
@@ -40,7 +56,7 @@ func main() {
 	resizedCharacterImage := resize.Resize(CHARACTER_WIDTH, 0, CHARACTER_IMAGE_TO_RESIZE, resize.Lanczos3)
 	charImage := ebiten.NewImageFromImage(resizedCharacterImage)
 
-	cs2 := ControlSettings{
+	cs1 := ControlSettings{
 		rotateRightButton:  ebiten.KeyD,
 		rotateLeftButton:   ebiten.KeyA,
 		moveForwardButton:  ebiten.KeyW,
@@ -48,7 +64,7 @@ func main() {
 		shootButton:        ebiten.KeySpace,
 	}
 
-	cs1 := ControlSettings{
+	cs2 := ControlSettings{
 		rotateRightButton:  ebiten.KeyRight,
 		rotateLeftButton:   ebiten.KeyLeft,
 		moveForwardButton:  ebiten.KeyUp,
@@ -59,27 +75,17 @@ func main() {
 	game := &Game{
 		boardImage: ebiten.NewImage(SCREEN_SIZE_WIDTH, SCREEN_SIZE_HEIGHT),
 
-		boardSizeX: 10,
-		boardSizeY: 7,
+		boardSizeX: 7,
+		boardSizeY: 4,
 
 		things: Things{
 			bullets: make(map[int]Bullet, 20),
-			walls: map[Wall]struct{}{
-				Wall{
-					x:          1,
-					y:          1,
-					horizontal: false,
-				}: {},
-				Wall{
-					x:          2,
-					y:          1,
-					horizontal: true,
-				}: {},
-			},
+			walls:   map[Wall]struct{}{},
 		},
 
 		characters: []*Character{
 			{
+				id: 0,
 				input: Input{
 					ControlSettings: cs1,
 				},
@@ -90,6 +96,7 @@ func main() {
 				charImg:      charImage,
 			},
 			{
+				id: 1,
 				input: Input{
 					ControlSettings: cs2,
 				},
@@ -100,6 +107,7 @@ func main() {
 				charImg:      charImage,
 			},
 		},
+		charactersScores: []uint{0, 0},
 	}
 
 	if err := ebiten.RunGame(game); err != nil {
