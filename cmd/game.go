@@ -1,9 +1,14 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"image/color"
+	"log"
 	"time"
+
+	"myebiten/cmd/websocket/client"
+	"myebiten/cmd/websocket/server"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/text"
@@ -31,6 +36,8 @@ type Game struct {
 	charactersStash  []*Character
 	charactersScores []uint
 
+	server     *server.Server
+	client     *client.Client
 	boardImage *ebiten.Image
 }
 
@@ -39,6 +46,55 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 }
 
 func (g *Game) Update() error {
+	if !SUCCESS_CONNECTION {
+		g.makeSuccessConnection()
+	}
+
+	for i, char := range g.characters {
+		if char == nil {
+			continue
+		}
+		g.characters[i].input.Update()
+		if i == 1 && *CONNECTION_MODE == CONNECTION_MODE_CLIENT {
+			msg, err := json.Marshal(char.input)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			err = g.client.WriteMessage(msg)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			continue
+		} else if i == 1 && *CONNECTION_MODE == CONNECTION_MODE_SERVER {
+			msg, err := g.server.ReadMessage()
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			var newInput Input
+			err = json.Unmarshal(msg, &newInput)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			char.input = newInput
+			continue
+		}
+
+		newBullet := g.characters[i].Update(g.things.walls)
+		if newBullet != nil {
+			newBullet.id = g.things.getNextID()
+			g.things.bullets[newBullet.id] = *newBullet
+		}
+	}
+
+	if *CONNECTION_MODE == CONNECTION_MODE_CLIENT {
+		g.UpdateFromClient()
+		return nil
+	}
+
 	switch g.state {
 	case STATE_MAP_CREATING:
 		g.CreateMap()
@@ -50,18 +106,6 @@ func (g *Game) Update() error {
 		default:
 		}
 	default:
-	}
-
-	for i, char := range g.characters {
-		if char == nil {
-			continue
-		}
-		g.characters[i].input.Update()
-		newBullet := g.characters[i].Update(g.things.walls)
-		if newBullet != nil {
-			newBullet.id = g.things.getNextID()
-			g.things.bullets[newBullet.id] = *newBullet
-		}
 	}
 
 	for i, b := range g.things.bullets {
@@ -114,6 +158,17 @@ func (g *Game) Update() error {
 				g.characters[charIndex] = nil
 				g.charactersStash = append(g.charactersStash, charToStash)
 			}
+		}
+	}
+
+	if *CONNECTION_MODE == CONNECTION_MODE_SERVER {
+		msg, err := json.Marshal(g)
+		if err != nil {
+			log.Fatal(err)
+		}
+		err = g.server.WriteMessage(msg)
+		if err != nil {
+			log.Fatal(err)
 		}
 	}
 
