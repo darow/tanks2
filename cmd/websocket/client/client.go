@@ -3,59 +3,77 @@ package client
 import (
 	"fmt"
 	"log"
+	"runtime"
+	"sync"
 
 	"github.com/gorilla/websocket"
 )
 
+type MessageStore struct {
+	sync.Mutex
+	message []byte
+}
+
 type Client struct {
-	conn *websocket.Conn
+	charInputConn    *websocket.Conn
+	thingsUpdateConn *websocket.Conn
+	MapUpdateConn    *websocket.Conn
+	msgStore         *MessageStore
 }
 
 func New() *Client {
-	conn, _, err := websocket.DefaultDialer.Dial("ws://localhost:8080/ws", nil)
+	charInputConn, _, err := websocket.DefaultDialer.Dial("ws://localhost:8080/ws1", nil)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	return &Client{conn}
-}
-
-func (c *Client) Test() {
-	for {
-		var message string
-		_, err := fmt.Scanln(&message)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		if err := c.conn.WriteMessage(websocket.TextMessage, []byte(message)); err != nil {
-			log.Println(err)
-			return
-		}
-
-		_, msg, err := c.conn.ReadMessage()
-		if err != nil {
-			log.Println(err)
-			return
-		}
-
-		fmt.Printf("Received message: %s\n", string(msg))
-	}
-}
-
-func (c *Client) ReadMessage() ([]byte, error) {
-	_, message, err := c.conn.ReadMessage()
+	thingsUpdateConn, _, err := websocket.DefaultDialer.Dial("ws://localhost:8080/ws2", nil)
 	if err != nil {
-		return nil, err
+		log.Fatal(err)
 	}
 
-	fmt.Printf("Received message: %s\n", message)
+	mapUpdateConn, _, err := websocket.DefaultDialer.Dial("ws://localhost:8080/ws3", nil)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	return message, err
+	c := &Client{
+		charInputConn:    charInputConn,
+		thingsUpdateConn: thingsUpdateConn,
+		MapUpdateConn:    mapUpdateConn,
+		msgStore:         &MessageStore{},
+	}
+	go c.ReceiveUpdates()
+
+	return c
+}
+
+func (c *Client) ReceiveUpdates() {
+	for {
+		_, message, err := c.thingsUpdateConn.ReadMessage()
+		if err != nil {
+			log.Println(runtime.Caller(1))
+			log.Println(err)
+		}
+
+		fmt.Printf("Received message: %s\n", message)
+
+		c.msgStore.Lock()
+		c.msgStore.message = message
+		c.msgStore.Unlock()
+	}
+}
+
+func (c *Client) ReadMessage() []byte {
+	c.msgStore.Lock()
+	message := c.msgStore.message
+	c.msgStore.Unlock()
+
+	return message
 }
 
 func (c *Client) WriteMessage(message []byte) error {
-	if err := c.conn.WriteMessage(websocket.TextMessage, message); err != nil {
+	if err := c.charInputConn.WriteMessage(websocket.TextMessage, message); err != nil {
 		return err
 	}
 

@@ -5,40 +5,45 @@ import (
 )
 
 type Input struct {
-	rotateRight  bool
-	rotateLeft   bool
-	moveForward  bool
-	moveBackward bool
+	RotateRight  bool
+	RotateLeft   bool
+	MoveForward  bool
+	MoveBackward bool
+	Shoot        bool
 
 	ControlSettings
 }
 
 func (in *Input) Update() {
 	if inpututil.IsKeyJustPressed(in.rotateRightButton) {
-		in.rotateRight = true
+		in.RotateRight = true
 	}
-	if in.rotateRight && inpututil.IsKeyJustReleased(in.rotateRightButton) {
-		in.rotateRight = false
+	if in.RotateRight && inpututil.IsKeyJustReleased(in.rotateRightButton) {
+		in.RotateRight = false
 	}
 
 	if inpututil.IsKeyJustPressed(in.rotateLeftButton) {
-		in.rotateLeft = true
+		in.RotateLeft = true
 	}
-	if in.rotateLeft && inpututil.IsKeyJustReleased(in.rotateLeftButton) {
-		in.rotateLeft = false
+	if in.RotateLeft && inpututil.IsKeyJustReleased(in.rotateLeftButton) {
+		in.RotateLeft = false
 	}
 
 	if inpututil.IsKeyJustPressed(in.moveBackwardButton) {
-		in.moveBackward = true
+		in.MoveBackward = true
 	}
-	if in.moveBackward && inpututil.IsKeyJustReleased(in.moveBackwardButton) {
-		in.moveBackward = false
+	if in.MoveBackward && inpututil.IsKeyJustReleased(in.moveBackwardButton) {
+		in.MoveBackward = false
 	}
 
 	if inpututil.IsKeyJustPressed(in.moveForwardButton) {
-		in.moveForward = true
+		in.MoveForward = true
 	}
-	if in.moveForward && inpututil.IsKeyJustReleased(in.moveForwardButton) {
-		in.moveForward = false
+	if in.MoveForward && inpututil.IsKeyJustReleased(in.moveForwardButton) {
+		in.MoveForward = false
+	}
+
+	if inpututil.IsKeyJustPressed(in.shootButton) {
+		in.Shoot = true
 	}
 }

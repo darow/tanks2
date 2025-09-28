@@ -4,12 +4,21 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"runtime"
+	"sync"
 
 	"github.com/gorilla/websocket"
 )
 
+type MessageStore struct {
+	sync.Mutex
+	message []byte
+}
 type Server struct {
-	conn *websocket.Conn
+	charInputConn    *websocket.Conn
+	thingsUpdateConn *websocket.Conn
+	mapUpdateConn    *websocket.Conn
+	msgStore         *MessageStore
 }
 
 var upgrader = websocket.Upgrader{
@@ -18,53 +27,93 @@ var upgrader = websocket.Upgrader{
 }
 
 func New() *Server {
-	ch := make(chan *Server)
+	ch1 := make(chan *websocket.Conn)
+	ch2 := make(chan *websocket.Conn)
+	ch3 := make(chan *websocket.Conn)
 
-	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/ws1", func(w http.ResponseWriter, r *http.Request) {
 		conn, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
 			log.Println(err)
 			return
 		}
 
-		ch <- &Server{conn: conn}
+		ch1 <- conn
 	})
 
-	fmt.Println("Server is listening on port 8080")
-	go log.Fatal(http.ListenAndServe(":8080", nil))
-	return <-ch
-}
-
-func (s *Server) Test() {
-	for {
-		messageType, message, err := s.conn.ReadMessage()
+	http.HandleFunc("/ws2", func(w http.ResponseWriter, r *http.Request) {
+		conn, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
 			log.Println(err)
 			return
 		}
 
-		fmt.Printf("Received message: %s\n", message)
+		ch2 <- conn
+	})
 
-		if err := s.conn.WriteMessage(messageType, message); err != nil {
+	http.HandleFunc("/ws3", func(w http.ResponseWriter, r *http.Request) {
+		conn, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
 			log.Println(err)
 			return
 		}
+
+		ch3 <- conn
+	})
+
+	go func() {
+		fmt.Println("Server is listening on port 8080")
+		log.Fatal(http.ListenAndServe(":8080", nil))
+	}()
+
+	s := &Server{
+		charInputConn:    <-ch1,
+		thingsUpdateConn: <-ch2,
+		mapUpdateConn:    <-ch3,
+		msgStore:         &MessageStore{},
+	}
+
+	go s.ReceiveUpdates()
+	fmt.Println("client connected")
+
+	return s
+}
+
+func (s *Server) ReceiveUpdates() {
+	for {
+		_, message, err := s.charInputConn.ReadMessage()
+		if err != nil {
+			log.Println(runtime.Caller(1))
+			log.Println(err)
+			log.Fatal()
+		}
+
+		fmt.Printf("Received message: %s\n", message)
+
+		s.msgStore.Lock()
+		s.msgStore.message = message
+		s.msgStore.Unlock()
 	}
 }
 
-func (s *Server) ReadMessage() ([]byte, error) {
-	_, message, err := s.conn.ReadMessage()
-	if err != nil {
-		return nil, err
-	}
+func (s *Server) ReadMessage() []byte {
+	s.msgStore.Lock()
+	message := s.msgStore.message
+	s.msgStore.Unlock()
 
-	fmt.Printf("Received message: %s\n", message)
-
-	return message, err
+	return message
 }
 
-func (s *Server) WriteMessage(message []byte) error {
-	if err := s.conn.WriteMessage(websocket.TextMessage, message); err != nil {
+func (s *Server) WriteThingsMessage(message []byte) error {
+	if err := s.thingsUpdateConn.WriteMessage(websocket.TextMessage, message); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Server) WriteMapMessage(message []byte) error {
+	if err := s.mapUpdateConn.WriteMessage(websocket.TextMessage, message); err != nil {
 		return err
 	}
 

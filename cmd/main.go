@@ -38,7 +38,7 @@ var (
 
 func main() {
 	flag.Parse()
-	
+
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	setScreenSizeParams()
 
@@ -65,10 +65,10 @@ func main() {
 	charImage := ebiten.NewImageFromImage(resizedCharacterImage)
 
 	cs1 := ControlSettings{
-		rotateRightButton:  ebiten.KeyD,
-		rotateLeftButton:   ebiten.KeyA,
-		moveForwardButton:  ebiten.KeyW,
-		moveBackwardButton: ebiten.KeyS,
+		rotateRightButton:  ebiten.KeyF,
+		rotateLeftButton:   ebiten.KeyS,
+		moveForwardButton:  ebiten.KeyE,
+		moveBackwardButton: ebiten.KeyD,
 		shootButton:        ebiten.KeySpace,
 	}
 
@@ -86,21 +86,21 @@ func main() {
 		boardSizeX: 7,
 		boardSizeY: 4,
 
-		things: Things{
-			bullets: make(map[int]Bullet, 20),
+		Things: Things{
+			Bullets: make(map[int]Bullet, 20),
 			walls:   map[Wall]struct{}{},
 		},
 
-		characters: []*Character{
+		Characters: []*Character{
 			{
 				id: 0,
 				input: Input{
 					ControlSettings: cs1,
 				},
-				x: 400,
-				y: 400,
+				X: 400,
+				Y: 400,
 
-				currentWidth: CHARACTER_WIDTH,
+				CurrentWidth: CHARACTER_WIDTH,
 				charImg:      charImage,
 			},
 			{
@@ -108,14 +108,24 @@ func main() {
 				input: Input{
 					ControlSettings: cs2,
 				},
-				x: 700,
-				y: 500,
+				X: 700,
+				Y: 500,
 
-				currentWidth: CHARACTER_WIDTH,
+				CurrentWidth: CHARACTER_WIDTH,
 				charImg:      charImage,
 			},
 		},
-		charactersScores: []uint{0, 0},
+		CharactersScores: []uint{0, 0},
+	}
+
+	if *CONNECTION_MODE != CONNECTION_MODE_OFFLINE && !SUCCESS_CONNECTION {
+		game.makeSuccessConnection()
+		//if *CONNECTION_MODE == CONNECTION_MODE_SERVER {
+		//	game.Characters[0].input.ControlSettings = ControlSettings{}
+		//}
+		//if *CONNECTION_MODE == CONNECTION_MODE_CLIENT {
+		//	game.Characters[1].input.ControlSettings = ControlSettings{}
+		//}
 	}
 
 	if err := ebiten.RunGame(game); err != nil {

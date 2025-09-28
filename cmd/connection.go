@@ -2,7 +2,9 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
+	"runtime"
 
 	"myebiten/cmd/websocket/client"
 	"myebiten/cmd/websocket/server"
@@ -22,31 +24,36 @@ func (g *Game) makeSuccessConnection() {
 		g.server = server.New()
 	case CONNECTION_MODE_CLIENT:
 		g.client = client.New()
+		go g.ReceiveMapUpdates()
 	default:
 	}
 	SUCCESS_CONNECTION = true
 }
 
-func (g *Game) UpdateFromClient() {
-	msg, err := g.client.ReadMessage()
-	if err != nil {
-		log.Fatal(err)
-	}
+func (g *Game) UpdateGameFromServer() {
+	msg := g.client.ReadMessage()
 
 	var newGame Game
-	err = json.Unmarshal(msg, &newGame)
+	err := json.Unmarshal(msg, &newGame)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
+		return
 	}
 
-	g.charactersScores = newGame.charactersScores
+	if len(newGame.Characters) == 0 && len(newGame.CharactersStash) == 0 {
+		return
+	}
 
-	g.characters[0] = newGame.characters[0]
-	g.characters[1].x = newGame.characters[1].x
-	g.characters[1].y = newGame.characters[1].y
-	g.characters[1].rotation = newGame.characters[1].rotation
+	g.CharactersScores = newGame.CharactersScores
 
-	g.things = newGame.things
+	if len(g.Characters) == 0 {
+		g.Characters = append(g.Characters, newGame.Characters...)
+	} else {
+		g.Characters[0].Copy(newGame.Characters[0])
+		g.Characters[1].Copy(newGame.Characters[1])
+	}
+
+	g.Things.Bullets = newGame.Things.Bullets
 }
 
 func (c *Character) SendInputToServer(ws *websocket.Conn) {
@@ -58,5 +65,33 @@ func (c *Character) SendInputToServer(ws *websocket.Conn) {
 	err = ws.WriteMessage(websocket.TextMessage, msg)
 	if err != nil {
 		log.Fatal(err)
+	}
+}
+
+func (g *Game) ReceiveMapUpdates() {
+	for {
+		_, message, err := g.client.MapUpdateConn.ReadMessage()
+		if err != nil {
+			log.Println(runtime.Caller(1))
+			log.Println(err)
+		}
+
+		fmt.Printf("Received map message: %s\n", message)
+
+		var wallsDTO WallsDTO
+		err = json.Unmarshal(message, &wallsDTO)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		newWalls := make(map[Wall]struct{})
+
+		for _, w := range wallsDTO.Walls {
+			newWalls[w] = struct{}{}
+		}
+
+		g.Things.wallsMu.Lock()
+		g.Things.walls = newWalls
+		g.Things.wallsMu.Unlock()
 	}
 }
