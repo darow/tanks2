@@ -30,10 +30,11 @@ var (
 
 	CHARACTER_IMAGE_TO_RESIZE image.Image
 
-	CONNECTION_MODE             = flag.String("mode", "offline", "offline / server / client")
-	SERVER_MODE_PORT            = flag.String("server_mode_port", "8080", "IF TRUE THEN GAME IS IN HOST MODE AND WAITING FOR CONNECTION OF OTHER PLAYER")
-	CLIENT_CONNECT_MODE_ADDRESS = flag.String("client_connect_mode_address", "localhost:8080", "IF SETTED THEN GAME TRYING TO CONNECT TO HOST")
-	SUCCESS_CONNECTION          bool
+	CONNECTION_MODE  = flag.String("mode", "offline", "offline / server / client")
+	SERVER_MODE_PORT = flag.String("server_mode_port", "8080", "IF TRUE THEN GAME IS IN HOST MODE AND WAITING FOR CONNECTION OF OTHER PLAYER")
+
+	ADDRESS            = flag.String("address", "localhost:8080", "IF SETTED THEN GAME TRYING TO CONNECT TO HOST")
+	SUCCESS_CONNECTION bool
 )
 
 func main() {

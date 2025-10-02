@@ -21,18 +21,21 @@ type Client struct {
 	msgStore         *MessageStore
 }
 
-func New() *Client {
-	charInputConn, _, err := websocket.DefaultDialer.Dial("ws://localhost:8080/ws1", nil)
+func New(hostAddress string) *Client {
+	address := fmt.Sprintf("ws://%s/ws1", hostAddress)
+	charInputConn, _, err := websocket.DefaultDialer.Dial(address, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	thingsUpdateConn, _, err := websocket.DefaultDialer.Dial("ws://localhost:8080/ws2", nil)
+	address = fmt.Sprintf("ws://%s/ws2", hostAddress)
+	thingsUpdateConn, _, err := websocket.DefaultDialer.Dial(address, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	mapUpdateConn, _, err := websocket.DefaultDialer.Dial("ws://localhost:8080/ws3", nil)
+	address = fmt.Sprintf("ws://%s/ws3", hostAddress)
+	mapUpdateConn, _, err := websocket.DefaultDialer.Dial(address, nil)
 	if err != nil {
 		log.Fatal(err)
 	}

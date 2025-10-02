@@ -23,7 +23,7 @@ func (g *Game) makeSuccessConnection() {
 	case CONNECTION_MODE_SERVER:
 		g.server = server.New()
 	case CONNECTION_MODE_CLIENT:
-		g.client = client.New()
+		g.client = client.New(*ADDRESS)
 		go g.ReceiveMapUpdates()
 	default:
 	}
