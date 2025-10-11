@@ -88,7 +88,7 @@ func (s *Server) ReceiveUpdates() {
 			log.Fatal()
 		}
 
-		fmt.Printf("Received message: %s\n", message)
+		// fmt.Printf("Received message: %s\n", message)
 
 		s.msgStore.Lock()
 		s.msgStore.message = message

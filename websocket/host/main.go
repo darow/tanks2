@@ -29,7 +29,7 @@ func main() {
 				return
 			}
 
-			fmt.Printf("Received message: %s\n", message)
+			// fmt.Printf("Received message: %s\n", message)
 
 			if err := conn.WriteMessage(messageType, message); err != nil {
 				log.Println(err)

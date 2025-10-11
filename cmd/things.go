@@ -14,7 +14,7 @@ const (
 	CHARACTER_SPEED          = 5
 	CHARACTER_WIDTH          = 70
 	BULLET_SPEED             = 6
-	WALL_HEIGHT              = 200 // equal to cell size in labyrinth
+	WALL_HEIGHT              = 150 // equal to cell size in labyrinth
 	WALL_WIDTH               = 10
 )
 

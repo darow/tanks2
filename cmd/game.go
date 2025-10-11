@@ -29,6 +29,7 @@ const (
 type Game struct {
 	stateEndingTimer *time.Timer
 	state            int
+	leftAlive        int
 	boardSizeX       int
 	boardSizeY       int
 	Things           Things
@@ -103,11 +104,23 @@ func (g *Game) Update() error {
 		switch g.state {
 		case STATE_MAP_CREATING:
 			g.CreateMap()
-			g.state = STATE_GAME_RUNNING
 			g.SendMapToClient()
+			g.leftAlive = 2
+			g.state = STATE_GAME_RUNNING
+		case STATE_GAME_RUNNING:
+			if g.leftAlive <= 1 {
+				g.stateEndingTimer = time.NewTimer(STATE_GAME_ENDING_TIMER_SECONDS * time.Second)
+				g.state = STATE_GAME_ENDING
+			}
 		case STATE_GAME_ENDING:
 			select {
 			case <-g.stateEndingTimer.C:
+				for _, char := range g.Characters {
+					if char != nil {
+						g.CharactersScores[char.id]++
+						break
+					}
+				}
 				g.state = STATE_MAP_CREATING
 			default:
 			}
@@ -132,26 +145,13 @@ func (g *Game) Update() error {
 			isCollision := g.Things.DetectBulletCharacterCollision(bullet, char)
 			if isCollision {
 				delete(g.Things.Bullets, bulletKey)
+				g.leftAlive--
 
 				if FEATURE_DECREASING_TANKS {
 					g.Characters[charIndex].CurrentWidth--
 					resizedCharacterImage := resize.Resize(g.Characters[charIndex].CurrentWidth, 0, CHARACTER_IMAGE_TO_RESIZE, resize.Lanczos3)
 					g.Characters[charIndex].charImg = ebiten.NewImageFromImage(resizedCharacterImage)
 					continue
-				}
-				switch g.state {
-				case STATE_GAME_RUNNING:
-					for _, otherChar := range g.Characters {
-						if otherChar.id != char.id {
-							g.CharactersScores[otherChar.id]++
-						}
-					}
-					g.state = STATE_GAME_ENDING
-					g.stateEndingTimer = time.NewTimer(STATE_GAME_ENDING_TIMER_SECONDS * time.Second)
-				case STATE_GAME_ENDING:
-					{
-						g.CharactersScores[char.id]--
-					}
 				}
 
 				charToStash := char
@@ -201,7 +201,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	}
 
 	g.Things.wallsMu.RLock()
-	for w, _ := range g.Things.walls {
+	for w := range g.Things.walls {
 		width, height := float32(WALL_WIDTH), float32(WALL_HEIGHT)
 		if w.Horizontal {
 			width, height = WALL_HEIGHT, WALL_WIDTH
@@ -239,7 +239,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 	scoreX := g.boardSizeX * WALL_HEIGHT / 2
 	scoreY := g.boardSizeY*WALL_HEIGHT + 40
-	text.Draw(g.boardImage, fmt.Sprintf("%d %d", g.CharactersScores[0], g.CharactersScores[1]), REGULAR_FONT, scoreX, scoreY, color.Black)
+	text.Draw(g.boardImage, fmt.Sprintf("Player 1: %d        Player 2: %d", g.CharactersScores[0], g.CharactersScores[1]), REGULAR_FONT, scoreX, scoreY, color.Black)
 
 	screen.Clear()
 	screen.DrawImage(g.boardImage, &ebiten.DrawImageOptions{})

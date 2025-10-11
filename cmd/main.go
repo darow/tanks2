@@ -51,12 +51,16 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	const dpi = 72
 	REGULAR_FONT, err = opentype.NewFace(tt, &opentype.FaceOptions{
 		Size:    24,
 		DPI:     dpi,
 		Hinting: font.HintingFull,
 	})
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	CHARACTER_IMAGE_TO_RESIZE, _, err = image.Decode(bytes.NewReader(images.TankV2png))
 	if err != nil {
@@ -84,8 +88,10 @@ func main() {
 	game := &Game{
 		boardImage: ebiten.NewImage(SCREEN_SIZE_WIDTH, SCREEN_SIZE_HEIGHT),
 
-		boardSizeX: 7,
+		boardSizeX: 6,
 		boardSizeY: 4,
+
+		leftAlive: 2,
 
 		Things: Things{
 			Bullets: make(map[int]Bullet, 20),
