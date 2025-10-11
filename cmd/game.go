@@ -224,7 +224,6 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		op.GeoM.Reset()
 		op.GeoM.Translate(-float64(c.CurrentWidth)/2, -float64(c.CurrentWidth)/2)
 		op.GeoM.Rotate(c.Rotation)
-		op.GeoM.Scale(0.5, 0.5)
 		op.GeoM.Translate(c.X, c.Y)
 		g.boardImage.DrawImage(c.charImg, op)
 
