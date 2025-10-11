@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"log"
+	"math/rand"
 	"time"
 )
 
@@ -11,6 +12,10 @@ var (
 	sendingMapUpdates bool
 )
 
+type Coordinates struct {
+	i, j int
+}
+
 type MazeNode struct {
 	up    bool
 	down  bool
@@ -18,7 +23,7 @@ type MazeNode struct {
 	left  bool
 }
 
-func (mNode *MazeNode) addDirection(y, x int) {
+func (mNode *MazeNode) addDirection(x, y int) {
 	if y == 0 {
 		if x == 1 {
 			mNode.right = true
@@ -63,51 +68,156 @@ func (g *Game) CreateMap() {
 	}
 }
 
-func next(i, j, N, M int) (int, int, bool) {
-	if (i == N) && (((N%2 == 0) && (j == 1)) || ((N%2 == 1) && (j == M))) {
-		return i, j, false
+func next(currentCoord, root Coordinates, N, M int) (Coordinates, bool) {
+	if currentCoord == root {
+		return Coordinates{}, false
 	}
+
+	dir := -1
+	if root.i > currentCoord.i || (root.i == currentCoord.i && ((root.j > currentCoord.j && root.i%2 != 0) || (root.j < currentCoord.j && root.i%2 == 0))) {
+		dir = 1
+	}
+
+	i, j := currentCoord.i, currentCoord.j
 
 	if i%2 == 1 {
-		if j < M {
-			return i, j + 1, true
+		if 1 <= j+dir && j+dir <= M {
+			return Coordinates{i, j + dir}, true
 		}
 
-		return i + 1, j, true
+		return Coordinates{i + dir, j}, true
 	}
 
-	if j > 1 {
-		return i, j - 1, true
+	if 1 <= j-dir && j-dir <= M {
+		return Coordinates{i, j - dir}, true
 	}
 
-	return i + 1, j, true
+	return Coordinates{i + dir, j}, true
 }
 
-func getInitialMaze(N, M int) [][]MazeNode {
-	mazeNodes := make([][]MazeNode, N+2)
+func getRandomDirection(node Coordinates, prevDir, N, M int) int {
+	distribution := [4]float32{0.25, 0.25, 0.25, 0.25}
 
+	if prevDir != -1 {
+		for i := range distribution {
+			distribution[i] = 0.3
+		}
+		distribution[prevDir] = 0.1
+	}
+
+	p := rand.Float32()
+
+	var s float32 = 0.0
+	for index := range distribution {
+		s += distribution[index]
+		if p <= s {
+			return index
+		}
+	}
+
+	return -1
+}
+
+func getInitialMaze(N, M int) ([][]MazeNode, Coordinates) {
+	mazeNodes := make([][]MazeNode, N+2)
 	for i := range N + 2 {
 		mazeNodes[i] = make([]MazeNode, M+2)
 	}
 
-	i, j := 1, 1
-	for {
-		i1, j1, ok := next(i, j, N, M)
-		// fmt.Printf("%d %d\n", i1, j1)
-		if !ok {
-			break
-		}
+	root := Coordinates{rand.Intn(N) + 1, rand.Intn(M) + 1}
 
-		mazeNodes[i][j].addDirection(i1-i, j1-j)
-		mazeNodes[i1][j1].addDirection(i-i1, j-j1)
-		i, j = i1, j1
+	lastJ := M
+	if N%2 == 0 {
+		lastJ = 1
 	}
+
+	coords := [2]Coordinates{{1, 1}, {N, lastJ}}
+	for _, coord := range coords {
+		for {
+			nextCoord, ok := next(coord, root, N, M)
+			// fmt.Printf("%d %d\n", nextCoord.i, nextCoord.j)
+			if !ok {
+				break
+			}
+
+			mazeNodes[coord.i][coord.j].addDirection(nextCoord.j-coord.j, nextCoord.i-coord.i)
+			coord = nextCoord
+
+			// once you joined existing branch you can quit
+			if node := mazeNodes[coord.i][coord.j]; node.up || node.down || node.right || node.left {
+				break
+			}
+		}
+	}
+
+	return mazeNodes, root
+}
+
+func addConnections(mazeNodes [][]MazeNode) [][]MazeNode {
+	// count := min(len(mazeNodes), len(mazeNodes[0])) - 2
 
 	return mazeNodes
 }
 
 func createMaze(N, M int) [][]MazeNode {
-	mazeNodes := getInitialMaze(N, M)
+	mazeNodes, root := getInitialMaze(N, M)
+
+	dirIndex := -1
+	count := 0
+	for count < N*M {
+		dirIndex = getRandomDirection(root, dirIndex, N, M)
+
+		switch dirIndex {
+		case 0:
+			if root.j == M {
+				continue
+			}
+			mazeNodes[root.i][root.j].addDirection(1, 0)
+			root.j++
+			count++
+		case 1:
+			if root.i == N {
+				continue
+			}
+			mazeNodes[root.i][root.j].addDirection(0, 1)
+			root.i++
+			count++
+		case 2:
+			if root.j == 1 {
+				continue
+			}
+			mazeNodes[root.i][root.j].addDirection(-1, 0)
+			root.j--
+			count++
+		case 3:
+			if root.i == 1 {
+				continue
+			}
+			mazeNodes[root.i][root.j].addDirection(0, -1)
+			root.i--
+			count++
+		}
+
+		node := &mazeNodes[root.i][root.j]
+		if node.up {
+			node.up = false
+			continue
+		}
+		if node.down {
+			node.down = false
+			continue
+		}
+		if node.right {
+			node.right = false
+			continue
+		}
+		if node.left {
+			node.left = false
+			continue
+		}
+	}
+
+	mazeNodes = addConnections(mazeNodes)
 
 	return mazeNodes
 }
@@ -141,7 +251,6 @@ func buildMaze(mazeNodes [][]MazeNode, walls map[Wall]struct{}) {
 			}
 		}
 	}
-
 }
 
 func (g *Game) SendMapToClient() {
