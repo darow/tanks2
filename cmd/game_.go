@@ -2,9 +2,9 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"math/rand"
-	"time"
 )
 
 var (
@@ -38,18 +38,15 @@ func (mNode *MazeNode) addDirection(x, y int) {
 }
 
 func (g *Game) CreateMap() {
-	g.Things = Things{
-		Bullets: make(map[int]Bullet),
-		walls:   make(map[Wall]struct{}),
-	}
+	fmt.Printf("ahhaha\n")
+	g.Walls = make(map[Wall]struct{})
 
 	mazeNodes := createMaze(g.boardSizeY, g.boardSizeX)
-	buildMaze(mazeNodes, g.Things.walls)
+	buildMaze(mazeNodes, g.Walls)
 
-	for _, char := range g.CharactersStash {
-		g.Characters[char.id] = char
+	for _, char := range g.Characters {
+		char.active = true
 	}
-	g.CharactersStash = nil
 
 	spawnPlaces := []Point{
 		{x: WALL_HEIGHT * 0.5, y: WALL_HEIGHT * 0.5},
@@ -58,13 +55,15 @@ func (g *Game) CreateMap() {
 
 	i := 0
 	for _, char := range g.Characters {
-		if char == nil {
+		if !char.active {
 			continue
 		}
 
-		char.X = spawnPlaces[i].x
-		char.Y = spawnPlaces[i].y
+		char.position.x = spawnPlaces[i].x
+		char.position.y = spawnPlaces[i].y
 		i++
+
+		fmt.Printf("character %d: %v\n", i-1, char.position)
 	}
 }
 
@@ -232,20 +231,39 @@ func buildMaze(mazeNodes [][]MazeNode, walls map[Wall]struct{}) {
 			horizontalWall := !(currentNode.down || downNode.up) && (j != len(mazeNodes[0])-1)
 			verticalWall := !(currentNode.left || leftNode.right) && (i != len(mazeNodes)-1)
 
+			wh := float64(WALL_HEIGHT)
+			ww := float64(WALL_WIDTH)
+
+			nodeCenter := Point{float64(j-1)*wh + wh/2, float64(i-1)*wh + wh/2}
+
 			if horizontalWall {
+				// xCenter := (j - 1) * WALL_HEIGHT
+				// yCenter := (i-1)*WALL_HEIGHT - (WALL_HEIGHT-WALL_WIDTH)/2
+
 				w := Wall{
-					X:          uint16(j - 1),
-					Y:          uint16(i - 1),
-					Horizontal: true,
+					GameObject: GameObject{
+						active:   true,
+						position: Point{nodeCenter.x, nodeCenter.y - (wh-ww)/2},
+						rotation: 0.0,
+					},
+					hitbox: RectangleHitbox{WALL_WIDTH, WALL_HEIGHT},
+					sprite: RectangleSprite{WALL_WIDTH, WALL_HEIGHT},
 				}
 				walls[w] = struct{}{}
 			}
 
 			if verticalWall {
+				// xCenter := (j-1)*WALL_HEIGHT - (WALL_HEIGHT-WALL_WIDTH)/2
+				// yCenter := (i - 1) * WALL_HEIGHT
+
 				w := Wall{
-					X:          uint16(j - 1),
-					Y:          uint16(i - 1),
-					Horizontal: false,
+					GameObject: GameObject{
+						active:   true,
+						position: Point{nodeCenter.x - (wh-ww)/2, nodeCenter.y},
+						rotation: 90.0,
+					},
+					hitbox: RectangleHitbox{WALL_WIDTH, WALL_HEIGHT},
+					sprite: RectangleSprite{WALL_WIDTH, WALL_HEIGHT},
 				}
 				walls[w] = struct{}{}
 			}
@@ -256,7 +274,7 @@ func buildMaze(mazeNodes [][]MazeNode, walls map[Wall]struct{}) {
 func (g *Game) SendMapToClient() {
 	wd = WallsDTO{}
 
-	for key := range g.Things.walls {
+	for key := range g.Walls {
 		wd.Walls = append(wd.Walls, key)
 	}
 
@@ -269,26 +287,5 @@ func (g *Game) SendMapToClient() {
 
 	if err != nil {
 		log.Fatal(err)
-	}
-
-	//if !sendingMapUpdates {
-	//	go g.sendMapUpdates()
-	//	sendingMapUpdates = true
-	//}
-}
-
-func (g *Game) sendMapUpdates() {
-	t := time.NewTicker(1 * time.Second)
-	for range t.C {
-		msg, err := json.Marshal(wd)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		err = g.server.WriteMapMessage(msg)
-
-		if err != nil {
-			log.Fatal(err)
-		}
 	}
 }

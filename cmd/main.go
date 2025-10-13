@@ -93,36 +93,51 @@ func main() {
 
 		leftAlive: 2,
 
-		Things: Things{
-			Bullets: make(map[int]Bullet, 20),
-			walls:   map[Wall]struct{}{},
-		},
+		Bullets: make([]*Bullet, 10),
+		Walls:   map[Wall]struct{}{},
 
 		Characters: []*Character{
 			{
-				id: 0,
+				GameObject: GameObject{
+					id:       0,
+					active:   true,
+					position: Point{400, 400},
+					rotation: 0.0,
+				},
+
+				hitbox: RectangleHitbox{},
+				sprite: ImageSprite{charImage},
 				input: Input{
 					ControlSettings: cs1,
 				},
-				X: 400,
-				Y: 400,
 
-				CurrentWidth: CHARACTER_WIDTH,
-				charImg:      charImage,
+				// CurrentWidth: CHARACTER_WIDTH,
 			},
 			{
-				id: 1,
+				GameObject: GameObject{
+					id:       1,
+					active:   true,
+					position: Point{700, 500},
+					rotation: 0.0,
+				},
+
+				hitbox: RectangleHitbox{},
+				sprite: ImageSprite{charImage},
 				input: Input{
 					ControlSettings: cs2,
 				},
-				X: 700,
-				Y: 500,
 
-				CurrentWidth: CHARACTER_WIDTH,
-				charImg:      charImage,
+				// CurrentWidth: CHARACTER_WIDTH,
 			},
 		},
 		CharactersScores: []uint{0, 0},
+	}
+
+	for i := range game.Bullets {
+		game.Bullets[i] = &Bullet{
+			hitbox: CircleHitbox{BULLET_RADIUS},
+			sprite: BallSprite{BULLET_RADIUS},
+		}
 	}
 
 	if *CONNECTION_MODE != CONNECTION_MODE_OFFLINE && !SUCCESS_CONNECTION {
@@ -158,5 +173,5 @@ func setScreenSizeParams() {
 	)
 
 	SCREEN_SIZE_WIDTH = GetSystemMetrics(SM_CXSCREEN)
-	SCREEN_SIZE_HEIGHT = GetSystemMetrics(SM_CYSCREEN) - 20
+	SCREEN_SIZE_HEIGHT = GetSystemMetrics(SM_CYSCREEN)
 }

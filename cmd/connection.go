@@ -40,7 +40,7 @@ func (g *Game) UpdateGameFromServer() {
 		return
 	}
 
-	if len(newGame.Characters) == 0 && len(newGame.CharactersStash) == 0 {
+	if len(newGame.Characters) == 0 {
 		return
 	}
 
@@ -53,7 +53,7 @@ func (g *Game) UpdateGameFromServer() {
 		g.Characters[1].Copy(newGame.Characters[1])
 	}
 
-	g.Things.Bullets = newGame.Things.Bullets
+	g.Bullets = newGame.Bullets
 }
 
 func (c *Character) SendInputToServer(ws *websocket.Conn) {
@@ -90,8 +90,8 @@ func (g *Game) ReceiveMapUpdates() {
 			newWalls[w] = struct{}{}
 		}
 
-		g.Things.wallsMu.Lock()
-		g.Things.walls = newWalls
-		g.Things.wallsMu.Unlock()
+		// g.Things.wallsMu.Lock()
+		g.Walls = newWalls
+		// g.Things.wallsMu.Unlock()
 	}
 }
