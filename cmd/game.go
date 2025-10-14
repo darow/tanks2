@@ -12,7 +12,6 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/text"
-	"github.com/hajimehoshi/ebiten/v2/vector"
 )
 
 const (
@@ -33,8 +32,9 @@ type Game struct {
 	boardSizeX int
 	boardSizeY int
 
+	Maze             [][]MazeNode
 	Bullets          []*Bullet
-	Walls            map[Wall]struct{}
+	Walls            []Wall
 	Characters       []*Character
 	CharactersScores []uint
 
@@ -83,12 +83,46 @@ func (g *Game) Update() error {
 
 				char.input = newInput
 
-				char.Update(g.Bullets, g.Walls)
+				char.ProcessInput()
 			} else {
-				char.Update(g.Bullets, g.Walls)
+				char.ProcessInput()
 			}
 		} else {
-			char.Update(g.Bullets, g.Walls)
+			char.ProcessInput()
+		}
+
+		char.Move()
+		g.DetectCharacterToWallCollision(char)
+	}
+
+	for _, bullet := range g.Bullets {
+		bullet.Move()
+	}
+
+	for _, bullet := range g.Bullets {
+		if !bullet.active {
+			continue
+		}
+
+		g.DetectBulletToWallCollision(bullet)
+
+		for _, char := range g.Characters {
+			if !char.active {
+				continue
+			}
+
+			if g.DetectBulletToCharacterCollision(bullet, char) {
+				bullet.active = false
+				char.active = false
+				g.leftAlive--
+
+				// if FEATURE_DECREASING_TANKS {
+				// 	g.Characters[charIndex].CurrentWidth--
+				// 	resizedCharacterImage := resize.Resize(g.Characters[charIndex].CurrentWidth, 0, CHARACTER_IMAGE_TO_RESIZE, resize.Lanczos3)
+				// 	g.Characters[charIndex].charImg = ebiten.NewImageFromImage(resizedCharacterImage)
+				// 	continue
+				// }
+			}
 		}
 	}
 
@@ -98,6 +132,7 @@ func (g *Game) Update() error {
 	} else /* if *CONNECTION_MODE == CONNECTION_MODE_SERVER */ {
 		switch g.state {
 		case STATE_MAP_CREATING:
+			g.Reset()
 			g.CreateMap()
 			// g.SendMapToClient()
 			g.leftAlive = 2
@@ -123,64 +158,25 @@ func (g *Game) Update() error {
 		}
 	}
 
-	for _, b := range g.Bullets {
-		if b.position.x < 0 || b.position.x > float64(SCREEN_SIZE_WIDTH) || b.position.y < 0 || b.position.y > float64(SCREEN_SIZE_HEIGHT) {
-			b.active = false
-			continue
-		}
-
-		g.ProcessBullet(b)
-	}
-
-	for _, bullet := range g.Bullets {
-		if !bullet.active {
-			continue
-		}
-
-		for _, char := range g.Characters {
-			if !char.active {
-				continue
-			}
-
-			if isCollision := g.DetectBulletCharacterCollision(bullet, char); isCollision {
-				// delete(g.Things.Bullets, bulletKey)
-				bullet.active = false
-				char.active = false
-				g.leftAlive--
-
-				// if FEATURE_DECREASING_TANKS {
-				// 	g.Characters[charIndex].CurrentWidth--
-				// 	resizedCharacterImage := resize.Resize(g.Characters[charIndex].CurrentWidth, 0, CHARACTER_IMAGE_TO_RESIZE, resize.Lanczos3)
-				// 	g.Characters[charIndex].charImg = ebiten.NewImageFromImage(resizedCharacterImage)
-				// 	continue
-				// }
-			}
-		}
-	}
-
-	if *CONNECTION_MODE == CONNECTION_MODE_SERVER {
-		msg, err := json.Marshal(g)
-		if err != nil {
-			log.Fatal(err)
-		}
-		err = g.server.WriteThingsMessage(msg)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
+	// if *CONNECTION_MODE == CONNECTION_MODE_SERVER {
+	// 	msg, err := json.Marshal(g)
+	// 	if err != nil {
+	// 		log.Fatal(err)
+	// 	}
+	// 	err = g.server.WriteThingsMessage(msg)
+	// 	if err != nil {
+	// 		log.Fatal(err)
+	// 	}
+	// }
 
 	return nil
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-	//if g.boardImage == nil {
-	//	g.boardImage = ebiten.NewImage(SCREEN_SIZE_WIDTH, SCREEN_SIZE_HEIGHT)
-	//}
-
 	g.boardImage.Clear()
 	g.boardImage.Fill(COLOR_BACKGROUND)
 
-	for wall := range g.Walls {
+	for _, wall := range g.Walls {
 		if wall.active {
 			wall.sprite.Draw(g.boardImage, wall.position, wall.rotation)
 		}
@@ -226,10 +222,6 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	// 		vector.DrawFilledCircle(g.boardImage, float32(cx), float32(cy), 1, color.White, false)
 	// 	}
 	// }
-
-	for _, char := range g.Characters {
-		vector.DrawFilledCircle(g.boardImage, float32(char.position.x), float32(char.position.y), 1, color.White, false)
-	}
 
 	screen.Clear()
 	screen.DrawImage(g.boardImage, &ebiten.DrawImageOptions{})

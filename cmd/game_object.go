@@ -2,6 +2,7 @@ package main
 
 import (
 	"image/color"
+	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/vector"
@@ -16,7 +17,7 @@ type Hitbox interface {
 }
 
 type Sprite interface {
-	Draw(image *ebiten.Image, center Point, rotation float64)
+	Draw(image *ebiten.Image, center Vector2D, rotation float64)
 }
 
 type RectangleHitbox struct {
@@ -31,33 +32,39 @@ type RectangleSprite struct {
 	w, h float64
 }
 
-func (rectangleSprite RectangleSprite) Draw(image *ebiten.Image, center Point, rotation float64) {
-	w, h := rectangleSprite.w, rectangleSprite.h
+func (rectangleSprite RectangleSprite) Draw(image *ebiten.Image, center Vector2D, rotation float64) {
+	width, height := rectangleSprite.w, rectangleSprite.h
 	if rotation == 0.0 {
-		w, h = h, w
+		width, height = height, width
 	}
-	topLeftCorner := Point{center.x - w/2, center.y - h/2}
+	topLeftCorner := Vector2D{center.x - width/2, center.y - height/2}
 
-	// vector.StrokeLine(image, float32(topLeftCorner.x), float32(topLeftCorner.y), float32(topLeftCorner.x)+float32(w), float32(topLeftCorner.y)+float32(h), 1, color.White, false)
-	// vector.StrokeLine(image, float32(topLeftCorner.x)+float32(w), float32(topLeftCorner.y), float32(topLeftCorner.x), float32(topLeftCorner.y)+float32(h), 1, color.White, false)
+	x := float32(topLeftCorner.x)*float32(DRAWING_SCALE) + float32(DRAWING_OFFSET_X)
+	y := float32(topLeftCorner.y)*float32(DRAWING_SCALE) + float32(DRAWING_OFFSET_Y)
+	w := float32(width) * float32(DRAWING_SCALE)
+	h := float32(height) * float32(DRAWING_SCALE)
 
 	// if takes the coordinates in pixels, WHY THE FUCK ARE THEY FLOAT32???????????
-	vector.DrawFilledRect(image, float32(topLeftCorner.x), float32(topLeftCorner.y), float32(w), float32(h), color.Black, false)
+	vector.DrawFilledRect(image, x, y, w, h, color.Black, false)
 }
 
 type BallSprite struct {
 	r float64
 }
 
-func (ballSprite BallSprite) Draw(image *ebiten.Image, center Point, rotation float64) {
-	vector.DrawFilledCircle(image, float32(center.x), float32(center.y), float32(ballSprite.r), color.Black, false)
+func (ballSprite BallSprite) Draw(image *ebiten.Image, center Vector2D, rotation float64) {
+	x := float32(center.x)*float32(DRAWING_SCALE) + float32(DRAWING_OFFSET_X)
+	y := float32(center.y)*float32(DRAWING_SCALE) + float32(DRAWING_OFFSET_Y)
+	r := float32(ballSprite.r) * float32(DRAWING_SCALE)
+
+	vector.DrawFilledCircle(image, x, y, r, color.Black, false)
 }
 
 type ImageSprite struct {
 	*ebiten.Image
 }
 
-func (imageSprite ImageSprite) Draw(image *ebiten.Image, center Point, rotation float64) {
+func (imageSprite ImageSprite) Draw(image *ebiten.Image, center Vector2D, rotation float64) {
 	op := &ebiten.DrawImageOptions{}
 
 	w := imageSprite.Image.Bounds().Max.X - imageSprite.Image.Bounds().Min.X
@@ -66,14 +73,57 @@ func (imageSprite ImageSprite) Draw(image *ebiten.Image, center Point, rotation 
 	op.GeoM.Reset()
 	op.GeoM.Translate(-float64(w)/2, -float64(h)/2)
 	op.GeoM.Rotate(rotation)
-	op.GeoM.Translate(center.x, center.y)
+	op.GeoM.Scale(float64(DRAWING_SCALE), float64(DRAWING_SCALE))
+	op.GeoM.Translate(center.x*DRAWING_SCALE+float64(DRAWING_OFFSET_X), center.y*DRAWING_SCALE+float64(DRAWING_OFFSET_Y))
 
 	image.DrawImage(imageSprite.Image, op)
+}
+
+type Weapon interface {
+	Shoot(origin Vector2D, rotation float64)
+	Discharge()
+}
+
+type DefaultWeapon struct {
+	clip     []*Bullet
+	cooldown int
+}
+
+// It won't allow me to pass the pointer to the object
+func (dw DefaultWeapon) Shoot(origin Vector2D, rotation float64) {
+	for _, bullet := range dw.clip {
+		if !bullet.active {
+			bullet.position.x = origin.x
+			bullet.position.y = origin.y
+
+			bullet.rotation = rotation
+
+			sin, cos := math.Sincos(rotation)
+			bullet.speed.x = cos * BULLET_SPEED
+			bullet.speed.y = sin * BULLET_SPEED
+
+			bullet.active = true
+			break
+		}
+	}
+
+	dw.Discharge()
+}
+
+// Same here
+func (dw DefaultWeapon) Discharge() {
+
 }
 
 type GameObject struct {
 	id       int
 	active   bool
-	position Point
+	position Vector2D
 	rotation float64
+	speed    Vector2D
+}
+
+func (gameObject *GameObject) Move() {
+	gameObject.position.x += gameObject.speed.x
+	gameObject.position.y += gameObject.speed.y
 }

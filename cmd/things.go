@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -29,30 +28,12 @@ type Bullet struct {
 	sprite Sprite
 }
 
-func (b *Bullet) getShifts() (float64, float64) {
-	sin, cos := math.Sincos(b.rotation)
-	dx := cos * BULLET_SPEED
-	dy := sin * BULLET_SPEED
-
-	return dx, dy
-}
-
-func (b *Bullet) processBulletRotation(isCollision, isHorizontal bool) {
-	if isCollision {
-		if isHorizontal {
-			b.rotation = -b.rotation
-		}
-
-		b.rotation = math.Remainder(math.Pi-b.rotation, 2*math.Pi)
-	}
-}
-
 type Character struct {
 	GameObject
 	hitbox Hitbox
 	sprite Sprite
 	input  Input
-	// CurrentWidth uint
+	weapon Weapon
 }
 
 type ControlSettings struct {
@@ -63,8 +44,9 @@ type ControlSettings struct {
 	shootButton        ebiten.Key
 }
 
-func (c *Character) Update(bullets []*Bullet, walls map[Wall]struct{}) {
-	// oldX, oldY, oldRotation := c.position.x, c.position.y, c.rotation
+func (c *Character) ProcessInput() {
+	c.speed.x = 0.0
+	c.speed.y = 0.0
 
 	if c.input.RotateRight {
 		c.rotation += CHARACTER_ROTATION_SPEED
@@ -76,88 +58,40 @@ func (c *Character) Update(bullets []*Bullet, walls map[Wall]struct{}) {
 
 	if c.input.MoveForward {
 		sin, cos := math.Sincos(c.rotation)
-		c.position.x += cos * CHARACTER_SPEED
-		c.position.y += sin * CHARACTER_SPEED
+		c.speed.x = cos * CHARACTER_SPEED
+		c.speed.y = sin * CHARACTER_SPEED
 	}
 
 	if c.input.MoveBackward {
 		sin, cos := math.Sincos(c.rotation)
-		c.position.x -= cos * CHARACTER_SPEED * 5 / 6
-		c.position.y -= sin * CHARACTER_SPEED * 5 / 6
+		c.speed.x = -cos * CHARACTER_SPEED * 5 / 6
+		c.speed.y = -sin * CHARACTER_SPEED * 5 / 6
 	}
 
-	// for w := range walls {
-	// 	if c.detectWallCollision(w) {
-	// 		fmt.Printf("opa")
-	// 		c.position.x, c.position.y, c.rotation = oldX, oldY, oldRotation
-	// 		break
-	// 	}
-	// }
-
 	if c.input.Shoot {
-		fmt.Printf("haha")
 		c.input.Shoot = false
 		sin, cos := math.Sincos(c.rotation)
-		x := c.position.x + cos*(float64(CHARACTER_WIDTH)/2)
-		y := c.position.y + sin*(float64(CHARACTER_WIDTH)/2)
-
-		for _, bullet := range bullets {
-			if !bullet.active {
-				fmt.Printf("woah")
-				bullet.position.x = x
-				bullet.position.y = y
-				bullet.rotation = c.rotation
-				bullet.active = true
-				break
-			}
+		origin := Vector2D{
+			x: c.position.x + cos*(float64(CHARACTER_WIDTH)/2),
+			y: c.position.y + sin*(float64(CHARACTER_WIDTH)/2),
 		}
+
+		c.weapon.Shoot(origin, c.rotation)
 	}
 
 }
 
-func (c *Character) getCorners() []Point {
+func (c *Character) getCorners() []Vector2D {
 	// Получаем точки углов персонажа (с учётом поворота)
 	hw := float64(CHARACTER_WIDTH) / 2
 	hh := float64(CHARACTER_WIDTH) / 2
 
-	return []Point{
+	return []Vector2D{
 		rotatePoint(c.position.x-hw, c.position.y-hh, c.position.x, c.position.y, c.rotation),
 		rotatePoint(c.position.x+hw, c.position.y-hh, c.position.x, c.position.y, c.rotation),
 		rotatePoint(c.position.x+hw, c.position.y+hh, c.position.x, c.position.y, c.rotation),
 		rotatePoint(c.position.x-hw, c.position.y+hh, c.position.x, c.position.y, c.rotation),
 	}
-}
-
-func (c *Character) detectWallCollisionOld(w Wall) bool {
-	// 1. Центр стены
-	halfWallW := float64(WALL_WIDTH) / 2
-	halfWallH := float64(WALL_HEIGHT) / 2
-	if w.rotation == 0.0 {
-		halfWallW, halfWallH = halfWallH, halfWallW
-	}
-
-	wallCenterX := w.position.x
-	wallCenterY := w.position.y
-
-	// 2. Смещение стены относительно персонажа
-	dx := wallCenterX - c.position.x
-	dy := wallCenterY - c.position.y
-
-	// 3. Переводим в систему координат персонажа (учитывая поворот)
-	xLocal := dx*math.Cos(c.rotation) + dy*math.Sin(c.rotation)
-	yLocal := -dx*math.Sin(c.rotation) + dy*math.Cos(c.rotation)
-
-	// 4. Переводим размеры
-	halfCharW := float64(CHARACTER_WIDTH) / 2
-	halfCharH := float64(CHARACTER_WIDTH) / 2
-
-	// 5. Находим смещения по осям
-	// Разница между центрами в локальной системе координат
-	deltaX := math.Abs(xLocal)
-	deltaY := math.Abs(yLocal)
-
-	// 6. Проверяем пересечение по осям
-	return deltaX <= (halfCharW+halfWallW) && deltaY <= (halfCharH+halfWallH)
 }
 
 type Wall struct {
@@ -166,13 +100,13 @@ type Wall struct {
 	sprite Sprite
 }
 
-func (w *Wall) GetCorners() []Point {
+func (w *Wall) GetCorners() []Vector2D {
 	var height, width float64 = WALL_HEIGHT, WALL_WIDTH
 	if w.rotation == 0.0 {
 		height, width = width, height
 	}
 
-	corners := []Point{
+	corners := []Vector2D{
 		{w.position.x - width/2, w.position.y - height/2},
 		{w.position.x + width/2, w.position.y - height/2},
 		{w.position.x - width/2, w.position.y + height/2},
@@ -182,66 +116,71 @@ func (w *Wall) GetCorners() []Point {
 	return corners
 }
 
-func (g *Game) ProcessBullet(b *Bullet) {
-	dx, dy := b.getShifts()
-	b.position.x += dx
-	b.position.y += dy
-
-	isCollision, isHorizontal := false, false // g.DetectBulletToWallCollision(b, dx, dy)
-
-	b.processBulletRotation(isCollision, isHorizontal)
+func (g *Game) getClosestWalls(c *Character) []Wall {
+	return nil
 }
 
-// func (g *Game) DetectBulletToWallCollision(b Bullet, dx, dy float64) (isCollision, isHorizontal bool) {
-// 	if int(b.position.x)%WALL_HEIGHT <= WALL_WIDTH {
-// 		wallToCollide := Wall{
-// 			X:          uint16(math.Floor(b.position.x / WALL_HEIGHT)),
-// 			Y:          uint16(math.Floor(b.position.y / WALL_HEIGHT)),
-// 			Horizontal: false,
-// 		}
+func (g *Game) DetectCharacterToWallCollision(c *Character) {
+	closestWalls := g.getClosestWalls(c)
+	for _, w := range closestWalls {
+		c.detectWallCollision(w)
+	}
+}
 
-// 		_, ok := g.Walls[wallToCollide]
+func (g *Game) DetectBulletToWallCollision(b *Bullet) {
+	// isCollision, isHorizontal := false, false
 
-// 		if ok {
-// 			isCollision, isHorizontal = true, false
-// 			//end of wall
-// 			yInWall := math.Mod(b.position.y, WALL_HEIGHT)
-// 			ySpeed := math.Abs(dy)
-// 			if yInWall <= ySpeed && dy > 0 || WALL_HEIGHT-yInWall <= ySpeed && dy < 0 {
-// 				isHorizontal = true
-// 			}
+	// if int(b.position.x)%WALL_HEIGHT <= WALL_WIDTH {
+	// 	wallToCollide := Wall{
+	// 		X:          uint16(math.Floor(b.position.x / WALL_HEIGHT)),
+	// 		Y:          uint16(math.Floor(b.position.y / WALL_HEIGHT)),
+	// 		Horizontal: false,
+	// 	}
 
-// 			return
-// 		}
-// 	}
+	// 	_, ok := g.Walls[wallToCollide]
 
-// 	if int(b.position.y)%WALL_HEIGHT <= WALL_WIDTH {
-// 		wallToCollide := Wall{
-// 			X:          uint16(math.Floor(b.position.x / WALL_HEIGHT)),
-// 			Y:          uint16(math.Floor(b.position.y / WALL_HEIGHT)),
-// 			Horizontal: true,
-// 		}
+	// 	if ok {
+	// 		isCollision, isHorizontal = true, false
+	// 		//end of wall
+	// 		yInWall := math.Mod(b.position.y, WALL_HEIGHT)
+	// 		ySpeed := math.Abs(dy)
+	// 		if yInWall <= ySpeed && dy > 0 || WALL_HEIGHT-yInWall <= ySpeed && dy < 0 {
+	// 			isHorizontal = true
+	// 		}
+	// 	}
+	// }
 
-// 		_, ok := g.Walls[wallToCollide]
+	// if int(b.position.y)%WALL_HEIGHT <= WALL_WIDTH {
+	// 	wallToCollide := Wall{
+	// 		X:          uint16(math.Floor(b.position.x / WALL_HEIGHT)),
+	// 		Y:          uint16(math.Floor(b.position.y / WALL_HEIGHT)),
+	// 		Horizontal: true,
+	// 	}
 
-// 		if ok {
-// 			isCollision, isHorizontal = true, true
+	// 	_, ok := g.Walls[wallToCollide]
 
-// 			//end of wall
-// 			xInWall := math.Mod(b.position.x, WALL_HEIGHT)
-// 			xSpeed := math.Abs(dx)
-// 			if xInWall <= xSpeed && dx > 0 || WALL_HEIGHT-xInWall <= xSpeed && dx < 0 {
-// 				isHorizontal = false
-// 			}
+	// 	if ok {
+	// 		isCollision, isHorizontal = true, true
 
-// 			return
-// 		}
-// 	}
+	// 		//end of wall
+	// 		xInWall := math.Mod(b.position.x, WALL_HEIGHT)
+	// 		xSpeed := math.Abs(dx)
+	// 		if xInWall <= xSpeed && dx > 0 || WALL_HEIGHT-xInWall <= xSpeed && dx < 0 {
+	// 			isHorizontal = false
+	// 		}
+	// 	}
+	// }
 
-// 	return
-// }
+	// if isCollision {
+	// 	if isHorizontal {
+	// 		b.rotation = -b.rotation
+	// 	}
 
-func (g *Game) DetectBulletCharacterCollision(b *Bullet, c *Character) (isCollision bool) {
+	// 	b.rotation = math.Remainder(math.Pi-b.rotation, 2*math.Pi)
+	// }
+}
+
+func (g *Game) DetectBulletToCharacterCollision(b *Bullet, c *Character) (isCollision bool) {
 	// Сдвигаем снаряд в локальную систему координат прямоугольника
 	dx := b.position.x - c.position.x
 	dy := b.position.y - c.position.y

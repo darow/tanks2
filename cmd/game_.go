@@ -1,15 +1,11 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
-	"log"
 	"math/rand"
 )
 
 var (
-	wd                WallsDTO
-	sendingMapUpdates bool
+	wd WallsDTO
 )
 
 type Coordinates struct {
@@ -21,6 +17,8 @@ type MazeNode struct {
 	down  bool
 	right bool
 	left  bool
+
+	topWall, bottomWall, rightWall, leftWall *Wall
 }
 
 func (mNode *MazeNode) addDirection(x, y int) {
@@ -38,17 +36,17 @@ func (mNode *MazeNode) addDirection(x, y int) {
 }
 
 func (g *Game) CreateMap() {
-	fmt.Printf("ahhaha\n")
-	g.Walls = make(map[Wall]struct{})
+	g.Walls = make([]Wall, 0)
 
-	mazeNodes := createMaze(g.boardSizeY, g.boardSizeX)
-	buildMaze(mazeNodes, g.Walls)
+	g.Maze = createMaze(g.boardSizeY, g.boardSizeX)
+	g.Walls = buildMaze(g.Maze, g.Walls)
 
 	for _, char := range g.Characters {
 		char.active = true
 	}
 
-	spawnPlaces := []Point{
+	// TODO: Change to random spawn points
+	spawnPlaces := []Vector2D{
 		{x: WALL_HEIGHT * 0.5, y: WALL_HEIGHT * 0.5},
 		{x: WALL_HEIGHT*(float64(g.boardSizeX)-1) + WALL_HEIGHT*0.5, y: WALL_HEIGHT*(float64(g.boardSizeY)-1) + WALL_HEIGHT*0.5},
 	}
@@ -61,9 +59,13 @@ func (g *Game) CreateMap() {
 
 		char.position.x = spawnPlaces[i].x
 		char.position.y = spawnPlaces[i].y
-		i++
 
-		fmt.Printf("character %d: %v\n", i-1, char.position)
+		char.rotation = 0.0
+
+		char.speed.x = 0
+		char.speed.y = 0
+
+		i++
 	}
 }
 
@@ -221,7 +223,7 @@ func createMaze(N, M int) [][]MazeNode {
 	return mazeNodes
 }
 
-func buildMaze(mazeNodes [][]MazeNode, walls map[Wall]struct{}) {
+func buildMaze(mazeNodes [][]MazeNode, walls []Wall) []Wall {
 	for i := 1; i < len(mazeNodes); i++ {
 		for j := 1; j < len(mazeNodes[0]); j++ {
 			currentNode := mazeNodes[i][j]
@@ -234,58 +236,65 @@ func buildMaze(mazeNodes [][]MazeNode, walls map[Wall]struct{}) {
 			wh := float64(WALL_HEIGHT)
 			ww := float64(WALL_WIDTH)
 
-			nodeCenter := Point{float64(j-1)*wh + wh/2, float64(i-1)*wh + wh/2}
+			nodeCenter := Vector2D{float64(j-1)*wh + wh/2, float64(i-1)*wh + wh/2}
 
 			if horizontalWall {
-				// xCenter := (j - 1) * WALL_HEIGHT
-				// yCenter := (i-1)*WALL_HEIGHT - (WALL_HEIGHT-WALL_WIDTH)/2
-
 				w := Wall{
 					GameObject: GameObject{
 						active:   true,
-						position: Point{nodeCenter.x, nodeCenter.y - (wh-ww)/2},
+						position: Vector2D{nodeCenter.x, nodeCenter.y - (wh-ww)/2},
 						rotation: 0.0,
 					},
 					hitbox: RectangleHitbox{WALL_WIDTH, WALL_HEIGHT},
 					sprite: RectangleSprite{WALL_WIDTH, WALL_HEIGHT},
 				}
-				walls[w] = struct{}{}
+				currentNode.bottomWall = &w
+				downNode.topWall = &w
+				walls = append(walls, w)
 			}
 
 			if verticalWall {
-				// xCenter := (j-1)*WALL_HEIGHT - (WALL_HEIGHT-WALL_WIDTH)/2
-				// yCenter := (i - 1) * WALL_HEIGHT
-
 				w := Wall{
 					GameObject: GameObject{
 						active:   true,
-						position: Point{nodeCenter.x - (wh-ww)/2, nodeCenter.y},
+						position: Vector2D{nodeCenter.x - (wh-ww)/2, nodeCenter.y},
 						rotation: 90.0,
 					},
 					hitbox: RectangleHitbox{WALL_WIDTH, WALL_HEIGHT},
 					sprite: RectangleSprite{WALL_WIDTH, WALL_HEIGHT},
 				}
-				walls[w] = struct{}{}
+				walls = append(walls, w)
+				currentNode.leftWall = &w
+				leftNode.rightWall = &w
+				walls = append(walls, w)
 			}
 		}
 	}
+
+	return walls
 }
 
-func (g *Game) SendMapToClient() {
-	wd = WallsDTO{}
-
-	for key := range g.Walls {
-		wd.Walls = append(wd.Walls, key)
-	}
-
-	msg, err := json.Marshal(wd)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = g.server.WriteMapMessage(msg)
-
-	if err != nil {
-		log.Fatal(err)
+func (g *Game) Reset() {
+	for _, bullet := range g.Bullets {
+		bullet.active = false
 	}
 }
+
+// func (g *Game) SendMapToClient() {
+// 	wd = WallsDTO{}
+
+// 	for key := range g.Walls {
+// 		wd.Walls = append(wd.Walls, key)
+// 	}
+
+// 	msg, err := json.Marshal(wd)
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+
+// 	err = g.server.WriteMapMessage(msg)
+
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+// }

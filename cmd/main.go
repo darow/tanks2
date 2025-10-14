@@ -28,6 +28,10 @@ var (
 	SCREEN_SIZE_WIDTH  = 2560
 	SCREEN_SIZE_HEIGHT = 1420
 
+	DRAWING_OFFSET_X = 300
+	DRAWING_OFFSET_Y = 50
+	DRAWING_SCALE    = 0.8
+
 	CHARACTER_IMAGE_TO_RESIZE image.Image
 
 	CONNECTION_MODE  = flag.String("mode", "offline", "offline / server / client")
@@ -94,14 +98,13 @@ func main() {
 		leftAlive: 2,
 
 		Bullets: make([]*Bullet, 10),
-		Walls:   map[Wall]struct{}{},
 
 		Characters: []*Character{
 			{
 				GameObject: GameObject{
 					id:       0,
 					active:   true,
-					position: Point{400, 400},
+					position: Vector2D{400, 400},
 					rotation: 0.0,
 				},
 
@@ -110,14 +113,12 @@ func main() {
 				input: Input{
 					ControlSettings: cs1,
 				},
-
-				// CurrentWidth: CHARACTER_WIDTH,
 			},
 			{
 				GameObject: GameObject{
 					id:       1,
 					active:   true,
-					position: Point{700, 500},
+					position: Vector2D{700, 500},
 					rotation: 0.0,
 				},
 
@@ -126,8 +127,6 @@ func main() {
 				input: Input{
 					ControlSettings: cs2,
 				},
-
-				// CurrentWidth: CHARACTER_WIDTH,
 			},
 		},
 		CharactersScores: []uint{0, 0},
@@ -138,6 +137,10 @@ func main() {
 			hitbox: CircleHitbox{BULLET_RADIUS},
 			sprite: BallSprite{BULLET_RADIUS},
 		}
+	}
+
+	for _, char := range game.Characters {
+		char.weapon = DefaultWeapon{game.Bullets, 5}
 	}
 
 	if *CONNECTION_MODE != CONNECTION_MODE_OFFLINE && !SUCCESS_CONNECTION {

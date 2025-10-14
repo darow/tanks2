@@ -4,11 +4,11 @@ import (
 	"math"
 )
 
-type Point struct {
+type Vector2D struct {
 	x, y float64
 }
 
-func rotatePoint(px, py, cx, cy, angle float64) Point {
+func rotatePoint(px, py, cx, cy, angle float64) Vector2D {
 	s := math.Sin(angle)
 	c := math.Cos(angle)
 
@@ -24,21 +24,21 @@ func rotatePoint(px, py, cx, cy, angle float64) Point {
 	xnew += cx
 	ynew += cy
 
-	return Point{xnew, ynew}
+	return Vector2D{xnew, ynew}
 }
 
-func dot(a, b Point) float64 {
+func dot(a, b Vector2D) float64 {
 	return a.x*b.x + a.y*b.y
 }
 
-func getAxes(points []Point) []Point {
-	axes := []Point{}
+func getAxes(points []Vector2D) []Vector2D {
+	axes := []Vector2D{}
 	for i := 0; i < len(points); i++ {
 		p1 := points[i]
 		p2 := points[(i+1)%len(points)]
-		edge := Point{p2.x - p1.x, p2.y - p1.y}
+		edge := Vector2D{p2.x - p1.x, p2.y - p1.y}
 		// Нормаль
-		axis := Point{-edge.y, edge.x}
+		axis := Vector2D{-edge.y, edge.x}
 		// Нормализуем
 		length := math.Hypot(axis.x, axis.y)
 		axis.x /= length
@@ -48,7 +48,7 @@ func getAxes(points []Point) []Point {
 	return axes
 }
 
-func projectPolygon(axis Point, points []Point) (float64, float64) {
+func projectPolygon(axis Vector2D, points []Vector2D) (float64, float64) {
 	min := dot(points[0], axis)
 	max := min
 	for _, p := range points[1:] {
