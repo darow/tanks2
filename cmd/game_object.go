@@ -14,35 +14,50 @@ var (
 )
 
 type Hitbox interface {
+	Hit(this *GameObject, hb Hitbox, other *GameObject)
 }
 
 type Sprite interface {
-	Draw(image *ebiten.Image, center Vector2D, rotation float64)
+	Draw(drawingArea *DrawingArea, gameObject GameObject)
 }
 
 type RectangleHitbox struct {
 	w, h float64
 }
 
+func (rectHB RectangleHitbox) Hit(this *GameObject, hb Hitbox, other *GameObject) {
+
+}
+
 type CircleHitbox struct {
 	r float64
+}
+
+func (circleHB CircleHitbox) Hit(this *GameObject, hb Hitbox, other *GameObject) {
+
 }
 
 type RectangleSprite struct {
 	w, h float64
 }
 
-func (rectangleSprite RectangleSprite) Draw(image *ebiten.Image, center Vector2D, rotation float64) {
+func (rectangleSprite RectangleSprite) Draw(drawingArea *DrawingArea, gameObject GameObject) {
 	width, height := rectangleSprite.w, rectangleSprite.h
-	if rotation == 0.0 {
+	if gameObject.rotation == 0.0 {
 		width, height = height, width
 	}
-	topLeftCorner := Vector2D{center.x - width/2, center.y - height/2}
+	topLeftCorner := Vector2D{gameObject.position.x - width/2, gameObject.position.y - height/2}
 
-	x := float32(topLeftCorner.x)*float32(DRAWING_SCALE) + float32(DRAWING_OFFSET_X)
-	y := float32(topLeftCorner.y)*float32(DRAWING_SCALE) + float32(DRAWING_OFFSET_Y)
-	w := float32(width) * float32(DRAWING_SCALE)
-	h := float32(height) * float32(DRAWING_SCALE)
+	sc := drawingArea.Scale
+	offX := drawingArea.Offset.x
+	offY := drawingArea.Offset.y
+
+	x := float32(topLeftCorner.x)*float32(sc) + float32(offX)
+	y := float32(topLeftCorner.y)*float32(sc) + float32(offY)
+	w := float32(width) * float32(sc)
+	h := float32(height) * float32(sc)
+
+	image := drawingArea.boardImage
 
 	// if takes the coordinates in pixels, WHY THE FUCK ARE THEY FLOAT32???????????
 	vector.DrawFilledRect(image, x, y, w, h, color.Black, false)
@@ -52,10 +67,16 @@ type BallSprite struct {
 	r float64
 }
 
-func (ballSprite BallSprite) Draw(image *ebiten.Image, center Vector2D, rotation float64) {
-	x := float32(center.x)*float32(DRAWING_SCALE) + float32(DRAWING_OFFSET_X)
-	y := float32(center.y)*float32(DRAWING_SCALE) + float32(DRAWING_OFFSET_Y)
-	r := float32(ballSprite.r) * float32(DRAWING_SCALE)
+func (ballSprite BallSprite) Draw(drawingArea *DrawingArea, gameObject GameObject) {
+	sc := drawingArea.Scale
+	offX := drawingArea.Offset.x
+	offY := drawingArea.Offset.y
+
+	x := float32(gameObject.position.x)*float32(sc) + float32(offX)
+	y := float32(gameObject.position.y)*float32(sc) + float32(offY)
+	r := float32(ballSprite.r) * float32(sc)
+
+	image := drawingArea.boardImage
 
 	vector.DrawFilledCircle(image, x, y, r, color.Black, false)
 }
@@ -64,17 +85,23 @@ type ImageSprite struct {
 	*ebiten.Image
 }
 
-func (imageSprite ImageSprite) Draw(image *ebiten.Image, center Vector2D, rotation float64) {
+func (imageSprite ImageSprite) Draw(drawingArea *DrawingArea, gameObject GameObject) {
 	op := &ebiten.DrawImageOptions{}
 
 	w := imageSprite.Image.Bounds().Max.X - imageSprite.Image.Bounds().Min.X
 	h := imageSprite.Image.Bounds().Max.Y - imageSprite.Image.Bounds().Min.Y
 
+	sc := drawingArea.Scale
+	offX := drawingArea.Offset.x
+	offY := drawingArea.Offset.y
+
 	op.GeoM.Reset()
 	op.GeoM.Translate(-float64(w)/2, -float64(h)/2)
-	op.GeoM.Rotate(rotation)
-	op.GeoM.Scale(float64(DRAWING_SCALE), float64(DRAWING_SCALE))
-	op.GeoM.Translate(center.x*DRAWING_SCALE+float64(DRAWING_OFFSET_X), center.y*DRAWING_SCALE+float64(DRAWING_OFFSET_Y))
+	op.GeoM.Rotate(gameObject.rotation)
+	op.GeoM.Scale(sc, sc)
+	op.GeoM.Translate(gameObject.position.x*sc+offX, gameObject.position.y*sc+offY)
+
+	image := drawingArea.boardImage
 
 	image.DrawImage(imageSprite.Image, op)
 }
@@ -89,8 +116,7 @@ type DefaultWeapon struct {
 	cooldown int
 }
 
-// It won't allow me to pass the pointer to the object
-func (dw DefaultWeapon) Shoot(origin Vector2D, rotation float64) {
+func (dw *DefaultWeapon) Shoot(origin Vector2D, rotation float64) {
 	for _, bullet := range dw.clip {
 		if !bullet.active {
 			bullet.position.x = origin.x
@@ -110,8 +136,7 @@ func (dw DefaultWeapon) Shoot(origin Vector2D, rotation float64) {
 	dw.Discharge()
 }
 
-// Same here
-func (dw DefaultWeapon) Discharge() {
+func (dw *DefaultWeapon) Discharge() {
 
 }
 

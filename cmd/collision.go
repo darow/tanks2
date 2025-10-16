@@ -63,6 +63,10 @@ func projectPolygon(axis Vector2D, points []Vector2D) (float64, float64) {
 	return min, max
 }
 
+func squareDistance(v Vector2D, w Vector2D) float64 {
+	return (v.x-w.x)*(v.x-w.x) + (v.y-w.y)*(v.y-w.y)
+}
+
 func overlap(minA, maxA, minB, maxB float64) bool {
 	return !(maxA < minB || maxB < minA)
 }

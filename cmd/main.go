@@ -28,16 +28,21 @@ var (
 	SCREEN_SIZE_WIDTH  = 2560
 	SCREEN_SIZE_HEIGHT = 1420
 
-	DRAWING_OFFSET_X = 300
-	DRAWING_OFFSET_Y = 50
-	DRAWING_SCALE    = 0.8
+	MAX_BOARD_HEIGHT = 7
+	MAX_BOARD_WIDTH  = 12
+
+	MIN_BOARD_HEIGHT = 3
+	MIN_BOARD_WIDTH  = 3
+
+	DRAWING_OFFSET = Vector2D{300, 50}
+	DRAWING_SCALE  = 1.0
 
 	CHARACTER_IMAGE_TO_RESIZE image.Image
 
 	CONNECTION_MODE  = flag.String("mode", "offline", "offline / server / client")
 	SERVER_MODE_PORT = flag.String("server_mode_port", "8080", "IF TRUE THEN GAME IS IN HOST MODE AND WAITING FOR CONNECTION OF OTHER PLAYER")
 
-	ADDRESS            = flag.String("address", "localhost:8080", "IF SETTED THEN GAME TRYING TO CONNECT TO HOST")
+	ADDRESS            = flag.String("address", "localhost:8080", "IF SET THEN GAME TRYING TO CONNECT TO HOST")
 	SUCCESS_CONNECTION bool
 )
 
@@ -89,58 +94,68 @@ func main() {
 		shootButton:        ebiten.KeySlash,
 	}
 
-	game := &Game{
-		boardImage: ebiten.NewImage(SCREEN_SIZE_WIDTH, SCREEN_SIZE_HEIGHT),
+	bullets := make([]*Bullet, 10)
 
-		boardSizeX: 6,
-		boardSizeY: 4,
-
-		leftAlive: 2,
-
-		Bullets: make([]*Bullet, 10),
-
-		Characters: []*Character{
-			{
-				GameObject: GameObject{
-					id:       0,
-					active:   true,
-					position: Vector2D{400, 400},
-					rotation: 0.0,
-				},
-
-				hitbox: RectangleHitbox{},
-				sprite: ImageSprite{charImage},
-				input: Input{
-					ControlSettings: cs1,
-				},
-			},
-			{
-				GameObject: GameObject{
-					id:       1,
-					active:   true,
-					position: Vector2D{700, 500},
-					rotation: 0.0,
-				},
-
-				hitbox: RectangleHitbox{},
-				sprite: ImageSprite{charImage},
-				input: Input{
-					ControlSettings: cs2,
-				},
-			},
-		},
-		CharactersScores: []uint{0, 0},
-	}
-
-	for i := range game.Bullets {
-		game.Bullets[i] = &Bullet{
-			hitbox: CircleHitbox{BULLET_RADIUS},
-			sprite: BallSprite{BULLET_RADIUS},
+	for i := range bullets {
+		bullets[i] = &Bullet{
+			Hitbox: CircleHitbox{BULLET_RADIUS},
+			Sprite: BallSprite{BULLET_RADIUS},
 		}
 	}
 
-	for _, char := range game.Characters {
-		char.weapon = DefaultWeapon{game.Bullets, 5}
+	characters := []*Character{
+		{
+			GameObject: GameObject{
+				id:       0,
+				active:   true,
+				position: Vector2D{400, 400},
+				rotation: 0.0,
+			},
+
+			Hitbox: RectangleHitbox{CHARACTER_WIDTH, CHARACTER_WIDTH},
+			Sprite: ImageSprite{charImage},
+			weapon: &DefaultWeapon{bullets, 5},
+			input: Input{
+				ControlSettings: cs1,
+			},
+		},
+		{
+			GameObject: GameObject{
+				id:       1,
+				active:   true,
+				position: Vector2D{700, 500},
+				rotation: 0.0,
+			},
+
+			Hitbox: RectangleHitbox{CHARACTER_WIDTH, CHARACTER_WIDTH},
+			Sprite: ImageSprite{charImage},
+			weapon: &DefaultWeapon{bullets, 5},
+			input: Input{
+				ControlSettings: cs2,
+			},
+		},
+	}
+
+	image := ebiten.NewImage(SCREEN_SIZE_WIDTH, SCREEN_SIZE_HEIGHT)
+
+	mainArea := &DrawingArea{
+		boardImage: image,
+		DrawingSettings: DrawingSettings{
+			Offset: Vector2D{float64(SCREEN_SIZE_WIDTH) / 20, 0.0},
+			Scale:  1.0,
+		},
+		Height: float64(SCREEN_SIZE_HEIGHT),
+		Width:  float64(SCREEN_SIZE_WIDTH) * 0.9,
+	}
+	mainArea.parent = mainArea // yucky
+
+	game := &Game{
+		boardImage:       image,
+		leftAlive:        2,
+		Bullets:          bullets,
+		Characters:       characters,
+		CharactersScores: []uint{0, 0},
+		mainArea:         mainArea,
 	}
 
 	if *CONNECTION_MODE != CONNECTION_MODE_OFFLINE && !SUCCESS_CONNECTION {
@@ -152,6 +167,7 @@ func main() {
 		//	game.Characters[1].input.ControlSettings = ControlSettings{}
 		//}
 	}
+	// ebiten.SetFullscreen(true)
 
 	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)
@@ -171,10 +187,10 @@ func setScreenSizeParams() {
 	}
 
 	const (
-		SM_CXSCREEN = 0
-		SM_CYSCREEN = 1
+		SM_CXMAXIMIZED = 0 // Width of maximized window
+		SM_CYMAXIMIZED = 1 // Height of maximized window
 	)
 
-	SCREEN_SIZE_WIDTH = GetSystemMetrics(SM_CXSCREEN)
-	SCREEN_SIZE_HEIGHT = GetSystemMetrics(SM_CYSCREEN)
+	SCREEN_SIZE_WIDTH = GetSystemMetrics(SM_CXMAXIMIZED)
+	SCREEN_SIZE_HEIGHT = GetSystemMetrics(SM_CYMAXIMIZED)
 }

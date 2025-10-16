@@ -12,7 +12,7 @@ const (
 	CHARACTER_SPEED          = 5
 	CHARACTER_WIDTH          = 70
 	BULLET_SPEED             = 6
-	WALL_HEIGHT              = 150 // equal to cell size in labyrinth
+	WALL_HEIGHT              = 170 // equal to cell size in labyrinth
 	WALL_WIDTH               = 10
 )
 
@@ -24,14 +24,20 @@ type WallsDTO struct {
 
 type Bullet struct {
 	GameObject
-	hitbox Hitbox
-	sprite Sprite
+	Hitbox
+	Sprite
+}
+
+type Wall struct {
+	GameObject
+	Hitbox
+	Sprite
 }
 
 type Character struct {
 	GameObject
-	hitbox Hitbox
-	sprite Sprite
+	Hitbox
+	Sprite
 	input  Input
 	weapon Weapon
 }
@@ -94,12 +100,6 @@ func (c *Character) getCorners() []Vector2D {
 	}
 }
 
-type Wall struct {
-	GameObject
-	hitbox Hitbox
-	sprite Sprite
-}
-
 func (w *Wall) GetCorners() []Vector2D {
 	var height, width float64 = WALL_HEIGHT, WALL_WIDTH
 	if w.rotation == 0.0 {
@@ -116,18 +116,47 @@ func (w *Wall) GetCorners() []Vector2D {
 	return corners
 }
 
-func (g *Game) getClosestWalls(c *Character) []Wall {
+func (g *Game) getClosestWalls(c *Character) []*Wall {
 	return nil
+}
+
+func (g *Game) getClosestWall1(b *Bullet) *Wall {
+	wh := float64(WALL_HEIGHT)
+	ww := float64(WALL_WIDTH)
+
+	a := b.position.x / (wh - ww)
+	ai := int(math.Floor(a))
+
+	c := b.position.y / (wh - ww)
+	ci := int(math.Floor(c))
+
+	nodeCenter := getSceneCoordinates(ci+1, ai+1)
+
+	if squareDistance(b.position, nodeCenter) <= 60*60 {
+		return nil
+	}
+
+	if ci >= len(g.Maze)-2 || ci < 0 || ai >= len(g.Maze[0])-2 || ai < 0 {
+		return nil
+	}
+
+	return g.Maze[ci+1][ai+1].bottomWall
 }
 
 func (g *Game) DetectCharacterToWallCollision(c *Character) {
 	closestWalls := g.getClosestWalls(c)
 	for _, w := range closestWalls {
-		c.detectWallCollision(w)
+		c.detectWallCollision(*w)
 	}
 }
 
 func (g *Game) DetectBulletToWallCollision(b *Bullet) {
+	closestWall := g.getClosestWall1(b)
+	if closestWall == nil {
+		return
+	}
+
+	b.Hit(&b.GameObject, closestWall.Hitbox, &closestWall.GameObject)
 	// isCollision, isHorizontal := false, false
 
 	// if int(b.position.x)%WALL_HEIGHT <= WALL_WIDTH {

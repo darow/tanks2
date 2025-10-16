@@ -16,6 +16,7 @@ import (
 
 const (
 	STATE_GAME_ENDING_TIMER_SECONDS = 4
+	ITEM_SPAWN_INTERVAL             = 5
 )
 
 const (
@@ -26,17 +27,20 @@ const (
 
 type Game struct {
 	stateEndingTimer *time.Timer
+	itemSpawnTicker  *time.Ticker
 
-	state      int
-	leftAlive  int
-	boardSizeX int
-	boardSizeY int
+	state     int
+	leftAlive int
 
 	Maze             [][]MazeNode
 	Bullets          []*Bullet
 	Walls            []Wall
 	Characters       []*Character
 	CharactersScores []uint
+
+	mainArea *DrawingArea
+	UIArea1  *DrawingArea
+	UIArea2  *DrawingArea
 
 	server     *server.Server
 	client     *client.Client
@@ -133,14 +137,20 @@ func (g *Game) Update() error {
 		switch g.state {
 		case STATE_MAP_CREATING:
 			g.Reset()
-			g.CreateMap()
+			g.SetupLevel()
+			g.itemSpawnTicker = time.NewTicker(ITEM_SPAWN_INTERVAL * time.Second)
 			// g.SendMapToClient()
 			g.leftAlive = 2
 			g.state = STATE_GAME_RUNNING
 		case STATE_GAME_RUNNING:
-			if g.leftAlive <= 1 {
-				g.stateEndingTimer = time.NewTimer(STATE_GAME_ENDING_TIMER_SECONDS * time.Second)
-				g.state = STATE_GAME_ENDING
+			select {
+			case <-g.itemSpawnTicker.C:
+				g.SpawnItem()
+			default:
+				if g.leftAlive <= 1 {
+					g.stateEndingTimer = time.NewTimer(STATE_GAME_ENDING_TIMER_SECONDS * time.Second)
+					g.state = STATE_GAME_ENDING
+				}
 			}
 		case STATE_GAME_ENDING:
 			select {
@@ -178,26 +188,25 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 	for _, wall := range g.Walls {
 		if wall.active {
-			wall.sprite.Draw(g.boardImage, wall.position, wall.rotation)
+			wall.Draw(g.mainArea, wall.GameObject)
 		}
 	}
 
 	for _, character := range g.Characters {
 		if character.active {
-			character.sprite.Draw(g.boardImage, character.position, character.rotation)
+			character.Draw(g.mainArea, character.GameObject)
 		}
 	}
 
 	for _, bullet := range g.Bullets {
 		if bullet.active {
-			bullet.sprite.Draw(g.boardImage, bullet.position, bullet.rotation)
+			bullet.Draw(g.mainArea, bullet.GameObject)
 		}
 	}
 	// if DEBUG_MODE {
 	// 	vector.DrawFilledCircle(g.boardImage, float32(w.X)*WALL_HEIGHT, float32(w.Y)*WALL_HEIGHT, 2, color.RGBA{0x00, 0xff, 0xff, 0xff}, false)
 	// 	vector.DrawFilledCircle(g.boardImage, float32(w.X)*WALL_HEIGHT+WALL_WIDTH, float32(w.Y)*WALL_HEIGHT+WALL_HEIGHT, 2, color.RGBA{0x00, 0xff, 0xff, 0xff}, false)
 	// }
-
 	// if DEBUG_MODE {
 	// 	charCorners := c.getCorners()
 	// 	for _, corner := range charCorners {
@@ -205,9 +214,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	// 	}
 	// }
 
-	scoreX := g.boardSizeX * WALL_HEIGHT / 2
-	scoreY := g.boardSizeY*WALL_HEIGHT + 40
-	text.Draw(g.boardImage, fmt.Sprintf("Player 1: %d        Player 2: %d", g.CharactersScores[0], g.CharactersScores[1]), REGULAR_FONT, scoreX, scoreY, color.Black)
+	text.Draw(g.boardImage, fmt.Sprintf("Player 1: %d        Player 2: %d", g.CharactersScores[0], g.CharactersScores[1]), REGULAR_FONT, 0, 0, color.Black)
 
 	// for i := range g.boardSizeY {
 	// 	for j := range g.boardSizeX {

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"math"
 	"math/rand"
 )
 
@@ -35,20 +36,29 @@ func (mNode *MazeNode) addDirection(x, y int) {
 	}
 }
 
-func (g *Game) CreateMap() {
-	g.Walls = make([]Wall, 0)
+func getSceneCoordinates(i, j int) Vector2D {
+	wh := float64(WALL_HEIGHT)
+	ww := float64(WALL_WIDTH)
 
-	g.Maze = createMaze(g.boardSizeY, g.boardSizeX)
-	g.Walls = buildMaze(g.Maze, g.Walls)
+	return Vector2D{float64(j-1)*(wh-ww) + wh/2, float64(i-1)*(wh-ww) + wh/2}
+}
 
-	for _, char := range g.Characters {
-		char.active = true
-	}
+func (g *Game) SetupLevel() {
+	N := rand.Intn(MAX_BOARD_HEIGHT-MIN_BOARD_HEIGHT) + MIN_BOARD_HEIGHT
+	M := rand.Intn(MAX_BOARD_WIDTH-MIN_BOARD_WIDTH) + MIN_BOARD_WIDTH
 
-	// TODO: Change to random spawn points
-	spawnPlaces := []Vector2D{
-		{x: WALL_HEIGHT * 0.5, y: WALL_HEIGHT * 0.5},
-		{x: WALL_HEIGHT*(float64(g.boardSizeX)-1) + WALL_HEIGHT*0.5, y: WALL_HEIGHT*(float64(g.boardSizeY)-1) + WALL_HEIGHT*0.5},
+	g.CreateMap(N, M)
+	g.SetDrawingSettings(N, M)
+	g.SetCharacters(N, M)
+}
+
+func (g *Game) SetCharacters(N, M int) {
+	spawnPlaces := []Vector2D{}
+	for range g.Characters {
+		i := rand.Intn(N) + 1
+		j := rand.Intn(M) + 1
+		spawnPlace := getSceneCoordinates(i, j)
+		spawnPlaces = append(spawnPlaces, spawnPlace)
 	}
 
 	i := 0
@@ -67,6 +77,33 @@ func (g *Game) CreateMap() {
 
 		i++
 	}
+}
+
+func (g *Game) CreateMap(N, M int) {
+	g.Walls = make([]Wall, 0)
+
+	g.Maze = createMaze(N, M)
+	g.Walls = buildMaze(g.Maze, g.Walls)
+}
+
+func (g *Game) SetDrawingSettings(N, M int) {
+	areaHeight := g.mainArea.Height
+	areaWidth := g.mainArea.Width
+
+	mazeHeight := float64(N*(WALL_HEIGHT-WALL_WIDTH) + WALL_WIDTH)
+	mazeWidth := float64(M*(WALL_HEIGHT-WALL_WIDTH) + WALL_WIDTH)
+
+	scalingFactor := min(areaHeight/mazeHeight, areaWidth/mazeWidth)
+
+	mazeHeight *= scalingFactor
+	mazeWidth *= scalingFactor
+
+	newDrawingSettings := DrawingSettings{
+		Offset: Vector2D{(areaWidth - mazeWidth) / 2, (areaHeight - mazeHeight) / 2},
+		Scale:  scalingFactor,
+	}
+	newMainArea := g.mainArea.NewArea(mazeHeight, mazeWidth, newDrawingSettings)
+	g.mainArea = newMainArea
 }
 
 func next(currentCoord, root Coordinates, N, M int) (Coordinates, bool) {
@@ -226,9 +263,9 @@ func createMaze(N, M int) [][]MazeNode {
 func buildMaze(mazeNodes [][]MazeNode, walls []Wall) []Wall {
 	for i := 1; i < len(mazeNodes); i++ {
 		for j := 1; j < len(mazeNodes[0]); j++ {
-			currentNode := mazeNodes[i][j]
-			leftNode := mazeNodes[i][j-1]
-			downNode := mazeNodes[i-1][j]
+			currentNode := &mazeNodes[i][j]
+			leftNode := &mazeNodes[i][j-1]
+			downNode := &mazeNodes[i-1][j]
 
 			horizontalWall := !(currentNode.down || downNode.up) && (j != len(mazeNodes[0])-1)
 			verticalWall := !(currentNode.left || leftNode.right) && (i != len(mazeNodes)-1)
@@ -236,7 +273,7 @@ func buildMaze(mazeNodes [][]MazeNode, walls []Wall) []Wall {
 			wh := float64(WALL_HEIGHT)
 			ww := float64(WALL_WIDTH)
 
-			nodeCenter := Vector2D{float64(j-1)*wh + wh/2, float64(i-1)*wh + wh/2}
+			nodeCenter := getSceneCoordinates(i, j)
 
 			if horizontalWall {
 				w := Wall{
@@ -245,8 +282,8 @@ func buildMaze(mazeNodes [][]MazeNode, walls []Wall) []Wall {
 						position: Vector2D{nodeCenter.x, nodeCenter.y - (wh-ww)/2},
 						rotation: 0.0,
 					},
-					hitbox: RectangleHitbox{WALL_WIDTH, WALL_HEIGHT},
-					sprite: RectangleSprite{WALL_WIDTH, WALL_HEIGHT},
+					Hitbox: RectangleHitbox{WALL_WIDTH, WALL_HEIGHT},
+					Sprite: RectangleSprite{WALL_WIDTH, WALL_HEIGHT},
 				}
 				currentNode.bottomWall = &w
 				downNode.topWall = &w
@@ -258,10 +295,10 @@ func buildMaze(mazeNodes [][]MazeNode, walls []Wall) []Wall {
 					GameObject: GameObject{
 						active:   true,
 						position: Vector2D{nodeCenter.x - (wh-ww)/2, nodeCenter.y},
-						rotation: 90.0,
+						rotation: math.Pi / 2,
 					},
-					hitbox: RectangleHitbox{WALL_WIDTH, WALL_HEIGHT},
-					sprite: RectangleSprite{WALL_WIDTH, WALL_HEIGHT},
+					Hitbox: RectangleHitbox{WALL_WIDTH, WALL_HEIGHT},
+					Sprite: RectangleSprite{WALL_WIDTH, WALL_HEIGHT},
 				}
 				walls = append(walls, w)
 				currentNode.leftWall = &w
@@ -278,6 +315,22 @@ func (g *Game) Reset() {
 	for _, bullet := range g.Bullets {
 		bullet.active = false
 	}
+
+	for _, char := range g.Characters {
+		char.active = true
+
+		char.input.RotateLeft = false
+		char.input.RotateRight = false
+		char.input.MoveBackward = false
+		char.input.MoveForward = false
+		char.input.Shoot = false
+	}
+
+	g.mainArea = g.mainArea.parent
+}
+
+func (g *Game) SpawnItem() {
+
 }
 
 // func (g *Game) SendMapToClient() {
