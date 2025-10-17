@@ -106,33 +106,6 @@ func (g *Game) SetDrawingSettings(N, M int) {
 	g.mainArea = newMainArea
 }
 
-func next(currentCoord, root Coordinates, N, M int) (Coordinates, bool) {
-	if currentCoord == root {
-		return Coordinates{}, false
-	}
-
-	dir := -1
-	if root.i > currentCoord.i || (root.i == currentCoord.i && ((root.j > currentCoord.j && root.i%2 != 0) || (root.j < currentCoord.j && root.i%2 == 0))) {
-		dir = 1
-	}
-
-	i, j := currentCoord.i, currentCoord.j
-
-	if i%2 == 1 {
-		if 1 <= j+dir && j+dir <= M {
-			return Coordinates{i, j + dir}, true
-		}
-
-		return Coordinates{i + dir, j}, true
-	}
-
-	if 1 <= j-dir && j-dir <= M {
-		return Coordinates{i, j - dir}, true
-	}
-
-	return Coordinates{i + dir, j}, true
-}
-
 func getRandomDirection(node Coordinates, prevDir, N, M int) int {
 	distribution := [4]float32{0.25, 0.25, 0.25, 0.25}
 
@@ -164,12 +137,12 @@ func getInitialMaze(N, M int) ([][]MazeNode, Coordinates) {
 
 	root := Coordinates{rand.Intn(N) + 1, rand.Intn(M) + 1}
 
-	lastJ := M
-	if N%2 == 0 {
-		lastJ = 1
-	}
+	randomInt := rand.Intn(len(Generators))
 
-	coords := [2]Coordinates{{1, 1}, {N, lastJ}}
+	sources := Generators[randomInt].sources
+	next := Generators[randomInt].next
+
+	coords := sources(N, M)
 	for _, coord := range coords {
 		for {
 			nextCoord, ok := next(coord, root, N, M)
@@ -192,7 +165,23 @@ func getInitialMaze(N, M int) ([][]MazeNode, Coordinates) {
 }
 
 func addConnections(mazeNodes [][]MazeNode) [][]MazeNode {
-	// count := min(len(mazeNodes), len(mazeNodes[0])) - 2
+	count := min(len(mazeNodes), len(mazeNodes[0])) - 2
+	total := (len(mazeNodes)-2)*(len(mazeNodes[0])-2) - len(mazeNodes) - len(mazeNodes[0]) + 4
+	p := float64(count) / float64(total)
+
+	for i := 1; i <= len(mazeNodes)-2; i++ {
+		for j := 1; j <= len(mazeNodes[0])-2; j++ {
+			randomFloat := rand.Float64()
+			if i != len(mazeNodes)-2 && !mazeNodes[i][j].up && randomFloat <= p {
+				mazeNodes[i][j].up = true
+			}
+
+			randomFloat = rand.Float64()
+			if j != len(mazeNodes[0])-2 && !mazeNodes[i][j].right && randomFloat <= p {
+				mazeNodes[i][j].right = true
+			}
+		}
+	}
 
 	return mazeNodes
 }
