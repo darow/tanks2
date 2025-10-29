@@ -53,7 +53,7 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 
 func (g *Game) Update() error {
 	for i, char := range g.Characters {
-		if !char.active {
+		if !char.Active {
 			continue
 		}
 
@@ -104,20 +104,20 @@ func (g *Game) Update() error {
 	}
 
 	for _, bullet := range g.Bullets {
-		if !bullet.active {
+		if !bullet.Active {
 			continue
 		}
 
 		g.DetectBulletToWallCollision(bullet)
 
 		for _, char := range g.Characters {
-			if !char.active {
+			if !char.Active {
 				continue
 			}
 
 			if g.DetectBulletToCharacterCollision(bullet, char) {
-				bullet.active = false
-				char.active = false
+				bullet.Active = false
+				char.Active = false
 				g.leftAlive--
 
 				// if FEATURE_DECREASING_TANKS {
@@ -156,8 +156,8 @@ func (g *Game) Update() error {
 			select {
 			case <-g.stateEndingTimer.C:
 				for _, char := range g.Characters {
-					if char.active {
-						g.CharactersScores[char.id]++
+					if char.Active {
+						g.CharactersScores[char.ID]++
 						break
 					}
 				}
@@ -187,19 +187,19 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	g.boardImage.Fill(COLOR_BACKGROUND)
 
 	for _, wall := range g.Walls {
-		if wall.active {
+		if wall.Active {
 			wall.Draw(g.mainArea, wall.GameObject)
 		}
 	}
 
 	for _, character := range g.Characters {
-		if character.active {
+		if character.Active {
 			character.Draw(g.mainArea, character.GameObject)
 		}
 	}
 
 	for _, bullet := range g.Bullets {
-		if bullet.active {
+		if bullet.Active {
 			bullet.Draw(g.mainArea, bullet.GameObject)
 		}
 	}

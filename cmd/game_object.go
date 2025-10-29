@@ -38,15 +38,15 @@ func (circleHB CircleHitbox) Hit(this *GameObject, hb Hitbox, other *GameObject)
 }
 
 type RectangleSprite struct {
-	w, h float64
+	W, H float64
 }
 
 func (rectangleSprite RectangleSprite) Draw(drawingArea *DrawingArea, gameObject GameObject) {
-	width, height := rectangleSprite.w, rectangleSprite.h
-	if gameObject.rotation == 0.0 {
+	width, height := rectangleSprite.W, rectangleSprite.H
+	if gameObject.Rotation == 0.0 {
 		width, height = height, width
 	}
-	topLeftCorner := Vector2D{gameObject.position.x - width/2, gameObject.position.y - height/2}
+	topLeftCorner := Vector2D{gameObject.Position.x - width/2, gameObject.Position.y - height/2}
 
 	sc := drawingArea.Scale
 	offX := drawingArea.Offset.x
@@ -64,7 +64,7 @@ func (rectangleSprite RectangleSprite) Draw(drawingArea *DrawingArea, gameObject
 }
 
 type BallSprite struct {
-	r float64
+	R float64
 }
 
 func (ballSprite BallSprite) Draw(drawingArea *DrawingArea, gameObject GameObject) {
@@ -72,9 +72,9 @@ func (ballSprite BallSprite) Draw(drawingArea *DrawingArea, gameObject GameObjec
 	offX := drawingArea.Offset.x
 	offY := drawingArea.Offset.y
 
-	x := float32(gameObject.position.x)*float32(sc) + float32(offX)
-	y := float32(gameObject.position.y)*float32(sc) + float32(offY)
-	r := float32(ballSprite.r) * float32(sc)
+	x := float32(gameObject.Position.x)*float32(sc) + float32(offX)
+	y := float32(gameObject.Position.y)*float32(sc) + float32(offY)
+	r := float32(ballSprite.R) * float32(sc)
 
 	image := drawingArea.boardImage
 
@@ -97,9 +97,9 @@ func (imageSprite ImageSprite) Draw(drawingArea *DrawingArea, gameObject GameObj
 
 	op.GeoM.Reset()
 	op.GeoM.Translate(-float64(w)/2, -float64(h)/2)
-	op.GeoM.Rotate(gameObject.rotation)
+	op.GeoM.Rotate(gameObject.Rotation)
 	op.GeoM.Scale(sc, sc)
-	op.GeoM.Translate(gameObject.position.x*sc+offX, gameObject.position.y*sc+offY)
+	op.GeoM.Translate(gameObject.Position.x*sc+offX, gameObject.Position.y*sc+offY)
 
 	image := drawingArea.boardImage
 
@@ -118,17 +118,17 @@ type DefaultWeapon struct {
 
 func (dw *DefaultWeapon) Shoot(origin Vector2D, rotation float64) {
 	for _, bullet := range dw.clip {
-		if !bullet.active {
-			bullet.position.x = origin.x
-			bullet.position.y = origin.y
+		if !bullet.Active {
+			bullet.Position.x = origin.x
+			bullet.Position.y = origin.y
 
-			bullet.rotation = rotation
+			bullet.Rotation = rotation
 
 			sin, cos := math.Sincos(rotation)
-			bullet.speed.x = cos * BULLET_SPEED
-			bullet.speed.y = sin * BULLET_SPEED
+			bullet.Speed.x = cos * BULLET_SPEED
+			bullet.Speed.y = sin * BULLET_SPEED
 
-			bullet.active = true
+			bullet.Active = true
 			break
 		}
 	}
@@ -141,14 +141,14 @@ func (dw *DefaultWeapon) Discharge() {
 }
 
 type GameObject struct {
-	id       int
-	active   bool
-	position Vector2D
-	rotation float64
-	speed    Vector2D
+	ID       int
+	Active   bool
+	Position Vector2D
+	Rotation float64
+	Speed    Vector2D
 }
 
 func (gameObject *GameObject) Move() {
-	gameObject.position.x += gameObject.speed.x
-	gameObject.position.y += gameObject.speed.y
+	gameObject.Position.x += gameObject.Speed.x
+	gameObject.Position.y += gameObject.Speed.y
 }

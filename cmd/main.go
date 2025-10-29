@@ -98,6 +98,7 @@ func main() {
 
 	for i := range bullets {
 		bullets[i] = &Bullet{
+			R:      float64(BULLET_RADIUS),
 			Hitbox: CircleHitbox{BULLET_RADIUS},
 			Sprite: BallSprite{BULLET_RADIUS},
 		}
@@ -106,10 +107,10 @@ func main() {
 	characters := []*Character{
 		{
 			GameObject: GameObject{
-				id:       0,
-				active:   true,
-				position: Vector2D{400, 400},
-				rotation: 0.0,
+				ID:       0,
+				Active:   true,
+				Position: Vector2D{400, 400},
+				Rotation: 0.0,
 			},
 
 			Hitbox: RectangleHitbox{CHARACTER_WIDTH, CHARACTER_WIDTH},
@@ -121,10 +122,10 @@ func main() {
 		},
 		{
 			GameObject: GameObject{
-				id:       1,
-				active:   true,
-				position: Vector2D{700, 500},
-				rotation: 0.0,
+				ID:       1,
+				Active:   true,
+				Position: Vector2D{700, 500},
+				Rotation: 0.0,
 			},
 
 			Hitbox: RectangleHitbox{CHARACTER_WIDTH, CHARACTER_WIDTH},

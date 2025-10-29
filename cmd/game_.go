@@ -63,17 +63,17 @@ func (g *Game) SetCharacters(N, M int) {
 
 	i := 0
 	for _, char := range g.Characters {
-		if !char.active {
+		if !char.Active {
 			continue
 		}
 
-		char.position.x = spawnPlaces[i].x
-		char.position.y = spawnPlaces[i].y
+		char.Position.x = spawnPlaces[i].x
+		char.Position.y = spawnPlaces[i].y
 
-		char.rotation = 0.0
+		char.Rotation = 0.0
 
-		char.speed.x = 0
-		char.speed.y = 0
+		char.Speed.x = 0
+		char.Speed.y = 0
 
 		i++
 	}
@@ -267,9 +267,9 @@ func buildMaze(mazeNodes [][]MazeNode, walls []Wall) []Wall {
 			if horizontalWall {
 				w := Wall{
 					GameObject: GameObject{
-						active:   true,
-						position: Vector2D{nodeCenter.x, nodeCenter.y - (wh-ww)/2},
-						rotation: 0.0,
+						Active:   true,
+						Position: Vector2D{nodeCenter.x, nodeCenter.y - (wh-ww)/2},
+						Rotation: 0.0,
 					},
 					Hitbox: RectangleHitbox{WALL_WIDTH, WALL_HEIGHT},
 					Sprite: RectangleSprite{WALL_WIDTH, WALL_HEIGHT},
@@ -282,9 +282,9 @@ func buildMaze(mazeNodes [][]MazeNode, walls []Wall) []Wall {
 			if verticalWall {
 				w := Wall{
 					GameObject: GameObject{
-						active:   true,
-						position: Vector2D{nodeCenter.x - (wh-ww)/2, nodeCenter.y},
-						rotation: math.Pi / 2,
+						Active:   true,
+						Position: Vector2D{nodeCenter.x - (wh-ww)/2, nodeCenter.y},
+						Rotation: math.Pi / 2,
 					},
 					Hitbox: RectangleHitbox{WALL_WIDTH, WALL_HEIGHT},
 					Sprite: RectangleSprite{WALL_WIDTH, WALL_HEIGHT},
@@ -302,11 +302,11 @@ func buildMaze(mazeNodes [][]MazeNode, walls []Wall) []Wall {
 
 func (g *Game) Reset() {
 	for _, bullet := range g.Bullets {
-		bullet.active = false
+		bullet.Active = false
 	}
 
 	for _, char := range g.Characters {
-		char.active = true
+		char.Active = true
 
 		char.input.RotateLeft = false
 		char.input.RotateRight = false

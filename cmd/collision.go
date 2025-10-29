@@ -8,6 +8,10 @@ type Vector2D struct {
 	x, y float64
 }
 
+func (v Vector2D) length() float64 {
+	return math.Sqrt(v.x*v.x + v.y*v.y)
+}
+
 func rotatePoint(px, py, cx, cy, angle float64) Vector2D {
 	s := math.Sin(angle)
 	c := math.Cos(angle)
