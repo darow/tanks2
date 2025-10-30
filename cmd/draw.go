@@ -27,8 +27,8 @@ func (drawingArea *DrawingArea) NewArea(height, width float64, settings DrawingS
 
 		DrawingSettings: DrawingSettings{
 			Offset: Vector2D{
-				x: drawingArea.Offset.x + settings.Offset.x,
-				y: drawingArea.Offset.y + settings.Offset.y,
+				X: drawingArea.Offset.X + settings.Offset.X,
+				Y: drawingArea.Offset.Y + settings.Offset.Y,
 			},
 			Scale: drawingArea.Scale * settings.Scale,
 		},

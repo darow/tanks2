@@ -67,13 +67,13 @@ func (g *Game) SetCharacters(N, M int) {
 			continue
 		}
 
-		char.Position.x = spawnPlaces[i].x
-		char.Position.y = spawnPlaces[i].y
+		char.Position.X = spawnPlaces[i].X
+		char.Position.Y = spawnPlaces[i].Y
 
 		char.Rotation = 0.0
 
-		char.Speed.x = 0
-		char.Speed.y = 0
+		char.Speed.X = 0
+		char.Speed.Y = 0
 
 		i++
 	}
@@ -268,7 +268,7 @@ func buildMaze(mazeNodes [][]MazeNode, walls []Wall) []Wall {
 				w := Wall{
 					GameObject: GameObject{
 						Active:   true,
-						Position: Vector2D{nodeCenter.x, nodeCenter.y - (wh-ww)/2},
+						Position: Vector2D{nodeCenter.X, nodeCenter.Y - (wh-ww)/2},
 						Rotation: 0.0,
 					},
 					Hitbox: RectangleHitbox{WALL_WIDTH, WALL_HEIGHT},
@@ -283,7 +283,7 @@ func buildMaze(mazeNodes [][]MazeNode, walls []Wall) []Wall {
 				w := Wall{
 					GameObject: GameObject{
 						Active:   true,
-						Position: Vector2D{nodeCenter.x - (wh-ww)/2, nodeCenter.y},
+						Position: Vector2D{nodeCenter.X - (wh-ww)/2, nodeCenter.Y},
 						Rotation: math.Pi / 2,
 					},
 					Hitbox: RectangleHitbox{WALL_WIDTH, WALL_HEIGHT},

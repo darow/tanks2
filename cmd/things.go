@@ -25,20 +25,20 @@ type WallsDTO struct {
 type Bullet struct {
 	R float64
 	GameObject
-	Hitbox
-	Sprite
+	Hitbox `json:"-"`
+	Sprite `json:"-"`
 }
 
 type Wall struct {
 	GameObject
-	Hitbox
-	Sprite
+	Hitbox `json:"-"`
+	Sprite `json:"-"`
 }
 
 type Character struct {
 	GameObject
-	Hitbox
-	Sprite
+	Hitbox `json:"-"`
+	Sprite `json:"-"`
 	input  Input
 	weapon Weapon
 }
@@ -52,8 +52,8 @@ type ControlSettings struct {
 }
 
 func (c *Character) ProcessInput() {
-	c.Speed.x = 0.0
-	c.Speed.y = 0.0
+	c.Speed.X = 0.0
+	c.Speed.Y = 0.0
 
 	if c.input.RotateRight {
 		c.Rotation += CHARACTER_ROTATION_SPEED
@@ -65,22 +65,22 @@ func (c *Character) ProcessInput() {
 
 	if c.input.MoveForward {
 		sin, cos := math.Sincos(c.Rotation)
-		c.Speed.x = cos * CHARACTER_SPEED
-		c.Speed.y = sin * CHARACTER_SPEED
+		c.Speed.X = cos * CHARACTER_SPEED
+		c.Speed.Y = sin * CHARACTER_SPEED
 	}
 
 	if c.input.MoveBackward {
 		sin, cos := math.Sincos(c.Rotation)
-		c.Speed.x = -cos * CHARACTER_SPEED * 5 / 6
-		c.Speed.y = -sin * CHARACTER_SPEED * 5 / 6
+		c.Speed.X = -cos * CHARACTER_SPEED * 5 / 6
+		c.Speed.Y = -sin * CHARACTER_SPEED * 5 / 6
 	}
 
 	if c.input.Shoot {
 		c.input.Shoot = false
 		sin, cos := math.Sincos(c.Rotation)
 		origin := Vector2D{
-			x: c.Position.x + cos*(float64(CHARACTER_WIDTH)/2),
-			y: c.Position.y + sin*(float64(CHARACTER_WIDTH)/2),
+			X: c.Position.X + cos*(float64(CHARACTER_WIDTH)/2),
+			Y: c.Position.Y + sin*(float64(CHARACTER_WIDTH)/2),
 		}
 
 		c.weapon.Shoot(origin, c.Rotation)
@@ -94,10 +94,10 @@ func (c *Character) getCorners() []Vector2D {
 	hh := float64(CHARACTER_WIDTH) / 2
 
 	return []Vector2D{
-		rotatePoint(c.Position.x-hw, c.Position.y-hh, c.Position.x, c.Position.y, c.Rotation),
-		rotatePoint(c.Position.x+hw, c.Position.y-hh, c.Position.x, c.Position.y, c.Rotation),
-		rotatePoint(c.Position.x+hw, c.Position.y+hh, c.Position.x, c.Position.y, c.Rotation),
-		rotatePoint(c.Position.x-hw, c.Position.y+hh, c.Position.x, c.Position.y, c.Rotation),
+		rotatePoint(c.Position.X-hw, c.Position.Y-hh, c.Position.X, c.Position.Y, c.Rotation),
+		rotatePoint(c.Position.X+hw, c.Position.Y-hh, c.Position.X, c.Position.Y, c.Rotation),
+		rotatePoint(c.Position.X+hw, c.Position.Y+hh, c.Position.X, c.Position.Y, c.Rotation),
+		rotatePoint(c.Position.X-hw, c.Position.Y+hh, c.Position.X, c.Position.Y, c.Rotation),
 	}
 }
 
@@ -108,10 +108,10 @@ func (w *Wall) GetCorners() []Vector2D {
 	}
 
 	corners := []Vector2D{
-		{w.Position.x - width/2, w.Position.y - height/2},
-		{w.Position.x + width/2, w.Position.y - height/2},
-		{w.Position.x - width/2, w.Position.y + height/2},
-		{w.Position.x + width/2, w.Position.y + height/2},
+		{w.Position.X - width/2, w.Position.Y - height/2},
+		{w.Position.X + width/2, w.Position.Y - height/2},
+		{w.Position.X - width/2, w.Position.Y + height/2},
+		{w.Position.X + width/2, w.Position.Y + height/2},
 	}
 
 	return corners
@@ -125,10 +125,10 @@ func (g *Game) getClosestWall1(b *Bullet) *Wall {
 	wh := float64(WALL_HEIGHT)
 	ww := float64(WALL_WIDTH)
 
-	a := b.Position.x / (wh - ww)
+	a := b.Position.X / (wh - ww)
 	ai := int(math.Floor(a))
 
-	c := b.Position.y / (wh - ww)
+	c := b.Position.Y / (wh - ww)
 	ci := int(math.Floor(c))
 
 	nodeCenter := getSceneCoordinates(ci+1, ai+1)
@@ -137,10 +137,10 @@ func (g *Game) getClosestWall1(b *Bullet) *Wall {
 		return nil
 	}
 
-	distToTop := (nodeCenter.y + wh/2 - ww) - b.Position.y
-	distToRight := (nodeCenter.y + wh/2 - ww) - b.Position.x
-	distToBottom := b.Position.y - (nodeCenter.y - wh/2 + ww)
-	distToLeft := b.Position.x - (nodeCenter.x - wh/2 + ww)
+	distToTop := (nodeCenter.Y + wh/2 - ww) - b.Position.Y
+	distToRight := (nodeCenter.Y + wh/2 - ww) - b.Position.X
+	distToBottom := b.Position.Y - (nodeCenter.Y - wh/2 + ww)
+	distToLeft := b.Position.X - (nodeCenter.X - wh/2 + ww)
 
 	var wallToHit *Wall
 	minDist := min(distToBottom, distToLeft, distToRight, distToTop)
@@ -155,14 +155,14 @@ func (g *Game) getClosestWall1(b *Bullet) *Wall {
 	if minDist == distToBottom {
 		wallToHit = g.Maze[ci+1][ai+1].bottomWall
 
-		cosine := b.Speed.x / b.Speed.length()
+		cosine := b.Speed.X / b.Speed.length()
 		l := minDist / cosine
 		t := l * (b.R/minDist - 1)
 
-		b.Position.x -= t * b.Speed.x
-		b.Position.y -= t * b.Speed.y
+		b.Position.X -= t * b.Speed.X
+		b.Position.Y -= t * b.Speed.Y
 
-		b.Speed.y = -b.Speed.y
+		b.Speed.Y = -b.Speed.Y
 	}
 
 	// check intersections with protrusions (fuck)
@@ -175,10 +175,10 @@ func lineIntersect(p1, p2, position Vector2D, speed Vector2D) (Vector2D, bool) {
 	// Line represented as position + t * speed
 
 	// Direction vectors for the segments
-	dx := p2.x - p1.x
-	dy := p2.y - p1.y
-	ldx := speed.x
-	ldy := speed.y
+	dx := p2.X - p1.X
+	dy := p2.Y - p1.Y
+	ldx := speed.X
+	ldy := speed.Y
 
 	denom := dx*ldy - dy*ldx
 
@@ -187,8 +187,8 @@ func lineIntersect(p1, p2, position Vector2D, speed Vector2D) (Vector2D, bool) {
 		return Vector2D{}, false
 	}
 
-	deltaX := position.x - p1.x
-	deltaY := position.y - p1.y
+	deltaX := position.X - p1.X
+	deltaY := position.Y - p1.Y
 
 	t := (deltaX*ldy - deltaY*ldx) / denom
 	u := (deltaX*dy - deltaY*dx) / denom
@@ -197,8 +197,8 @@ func lineIntersect(p1, p2, position Vector2D, speed Vector2D) (Vector2D, bool) {
 	if t >= 0 && t <= 1 && u >= 0 {
 		// Calculate intersection point
 		intersection := Vector2D{
-			x: position.x + u*ldx,
-			y: position.y + u*ldy,
+			X: position.X + u*ldx,
+			Y: position.Y + u*ldy,
 		}
 		return intersection, true
 	}
@@ -274,8 +274,8 @@ func (g *Game) DetectBulletToWallCollision(b *Bullet) {
 
 func (g *Game) DetectBulletToCharacterCollision(b *Bullet, c *Character) (isCollision bool) {
 	// Сдвигаем снаряд в локальную систему координат прямоугольника
-	dx := b.Position.x - c.Position.x
-	dy := b.Position.y - c.Position.y
+	dx := b.Position.X - c.Position.X
+	dy := b.Position.Y - c.Position.Y
 
 	sin, cos := math.Sincos(c.Rotation)
 
@@ -300,12 +300,12 @@ func (g *Game) DetectBulletToCharacterCollision(b *Bullet, c *Character) (isColl
 
 func (c *Character) Copy(c2 *Character) {
 	if c2 == nil {
-		c.Position.x = 99999
-		c.Position.y = 99999
+		c.Position.X = 99999
+		c.Position.Y = 99999
 		return
 	}
 
-	c.Position.x = c2.Position.x
-	c.Position.y = c2.Position.y
+	c.Position.X = c2.Position.X
+	c.Position.Y = c2.Position.Y
 	c.Rotation = c2.Rotation
 }
