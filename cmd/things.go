@@ -18,10 +18,6 @@ const (
 
 var TILE_ID_SEQUENCE = 0
 
-type WallsDTO struct {
-	Walls []Wall `json:"walls"`
-}
-
 type Bullet struct {
 	R float64
 	GameObject

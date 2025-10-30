@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"image/color"
 	"log"
@@ -20,7 +21,7 @@ const (
 )
 
 const (
-	STATE_MAP_CREATING = iota
+	STATE_MAZE_CREATING = iota
 	STATE_GAME_RUNNING
 	STATE_GAME_ENDING
 )
@@ -133,13 +134,14 @@ func (g *Game) Update() error {
 	}
 
 	switch g.state {
-	case STATE_MAP_CREATING:
+	case STATE_MAZE_CREATING:
 		g.Reset()
-		g.SetupLevel()
 		g.itemSpawnTicker = time.NewTicker(ITEM_SPAWN_INTERVAL * time.Second)
-		// g.SendMapToClient()
+		h, w, walls := g.SetupLevel()
+		g.SendMazeToClient(h, w, walls)
 		g.leftAlive = 2
 		g.state = STATE_GAME_RUNNING
+
 	case STATE_GAME_RUNNING:
 		select {
 		case <-g.itemSpawnTicker.C:
@@ -150,6 +152,7 @@ func (g *Game) Update() error {
 				g.state = STATE_GAME_ENDING
 			}
 		}
+
 	case STATE_GAME_ENDING:
 		select {
 		case <-g.stateEndingTimer.C:
@@ -159,10 +162,12 @@ func (g *Game) Update() error {
 					break
 				}
 			}
-			g.state = STATE_MAP_CREATING
+			g.state = STATE_MAZE_CREATING
 		default:
 		}
+
 	default:
+		return errors.New("invalid state")
 	}
 
 	msg, err := json.Marshal(g)

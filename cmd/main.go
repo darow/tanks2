@@ -148,7 +148,6 @@ func main() {
 		Height: float64(SCREEN_SIZE_HEIGHT),
 		Width:  float64(SCREEN_SIZE_WIDTH) * 0.9,
 	}
-	mainArea.parent = mainArea // yucky
 
 	game := &Game{
 		boardImage:       image,

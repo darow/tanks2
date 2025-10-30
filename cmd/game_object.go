@@ -22,7 +22,7 @@ type Sprite interface {
 }
 
 type RectangleHitbox struct {
-	w, h float64
+	W, H float64
 }
 
 func (rectHB RectangleHitbox) Hit(this *GameObject, hb Hitbox, other *GameObject) {
