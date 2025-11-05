@@ -5,11 +5,11 @@ import (
 )
 
 type Vector2D struct {
-	x, y float64
+	X, Y float64
 }
 
 func (v Vector2D) length() float64 {
-	return math.Sqrt(v.x*v.x + v.y*v.y)
+	return math.Sqrt(v.X*v.X + v.Y*v.Y)
 }
 
 func rotatePoint(px, py, cx, cy, angle float64) Vector2D {
@@ -32,7 +32,7 @@ func rotatePoint(px, py, cx, cy, angle float64) Vector2D {
 }
 
 func dot(a, b Vector2D) float64 {
-	return a.x*b.x + a.y*b.y
+	return a.X*b.X + a.Y*b.Y
 }
 
 func getAxes(points []Vector2D) []Vector2D {
@@ -40,13 +40,13 @@ func getAxes(points []Vector2D) []Vector2D {
 	for i := 0; i < len(points); i++ {
 		p1 := points[i]
 		p2 := points[(i+1)%len(points)]
-		edge := Vector2D{p2.x - p1.x, p2.y - p1.y}
+		edge := Vector2D{p2.X - p1.X, p2.Y - p1.Y}
 		// Нормаль
-		axis := Vector2D{-edge.y, edge.x}
+		axis := Vector2D{-edge.Y, edge.X}
 		// Нормализуем
-		length := math.Hypot(axis.x, axis.y)
-		axis.x /= length
-		axis.y /= length
+		length := math.Hypot(axis.X, axis.Y)
+		axis.X /= length
+		axis.Y /= length
 		axes = append(axes, axis)
 	}
 	return axes
@@ -68,7 +68,7 @@ func projectPolygon(axis Vector2D, points []Vector2D) (float64, float64) {
 }
 
 func squareDistance(v Vector2D, w Vector2D) float64 {
-	return (v.x-w.x)*(v.x-w.x) + (v.y-w.y)*(v.y-w.y)
+	return (v.X-w.X)*(v.X-w.X) + (v.Y-w.Y)*(v.Y-w.Y)
 }
 
 func overlap(minA, maxA, minB, maxB float64) bool {

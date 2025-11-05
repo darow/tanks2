@@ -2,7 +2,9 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
+	"runtime"
 
 	"myebiten/cmd/websocket/client"
 	"myebiten/cmd/websocket/server"
@@ -16,13 +18,18 @@ const (
 	CONNECTION_MODE_CLIENT  = "client"
 )
 
+type MazeDTO struct {
+	H, W  int
+	Walls []Wall
+}
+
 func (g *Game) makeSuccessConnection() {
 	switch *CONNECTION_MODE {
 	case CONNECTION_MODE_SERVER:
 		g.server = server.New()
 	case CONNECTION_MODE_CLIENT:
 		g.client = client.New(*ADDRESS)
-		// go g.ReceiveMapUpdates()
+		go g.ReceiveMazeUpdates()
 	default:
 	}
 	SUCCESS_CONNECTION = true
@@ -66,30 +73,44 @@ func (c *Character) SendInputToServer(ws *websocket.Conn) {
 	}
 }
 
-// func (g *Game) ReceiveMapUpdates() {
-// 	for {
-// 		_, message, err := g.client.MapUpdateConn.ReadMessage()
-// 		if err != nil {
-// 			log.Println(runtime.Caller(1))
-// 			log.Println(err)
-// 		}
+func (g *Game) ReceiveMazeUpdates() {
+	for {
+		_, message, err := g.client.MapUpdateConn.ReadMessage()
+		if err != nil {
+			log.Println(runtime.Caller(1))
+			log.Println(err)
+		}
 
-// 		fmt.Printf("Received map message: %s\n", message)
+		fmt.Printf("Received map message: %s\n", message)
 
-// 		var wallsDTO WallsDTO
-// 		err = json.Unmarshal(message, &wallsDTO)
-// 		if err != nil {
-// 			log.Fatal(err)
-// 		}
+		var maze MazeDTO
+		err = json.Unmarshal(message, &maze)
+		if err != nil {
+			log.Fatal(err)
+		}
 
-// 		newWalls := make(map[Wall]struct{})
+		g.Walls = maze.Walls
 
-// 		for _, w := range wallsDTO.Walls {
-// 			newWalls[w] = struct{}{}
-// 		}
+		for i := range g.Walls {
+			g.Walls[i].Hitbox = RectangleHitbox{WALL_WIDTH, WALL_HEIGHT}
+			g.Walls[i].Sprite = RectangleSprite{WALL_WIDTH, WALL_HEIGHT}
+		}
 
-// 		// g.Things.wallsMu.Lock()
-// 		g.Walls = newWalls
-// 		// g.Things.wallsMu.Unlock()
-// 	}
-// }
+		g.SetDrawingSettings(maze.H, maze.W)
+	}
+}
+
+func (g *Game) SendMazeToClient(h, w int, walls []Wall) {
+	maze := MazeDTO{h, w, walls}
+
+	msg, err := json.Marshal(maze)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = g.server.WriteMapMessage(msg)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+}

@@ -22,7 +22,7 @@ type Sprite interface {
 }
 
 type RectangleHitbox struct {
-	w, h float64
+	W, H float64
 }
 
 func (rectHB RectangleHitbox) Hit(this *GameObject, hb Hitbox, other *GameObject) {
@@ -46,20 +46,19 @@ func (rectangleSprite RectangleSprite) Draw(drawingArea *DrawingArea, gameObject
 	if gameObject.Rotation == 0.0 {
 		width, height = height, width
 	}
-	topLeftCorner := Vector2D{gameObject.Position.x - width/2, gameObject.Position.y - height/2}
+	topLeftCorner := Vector2D{gameObject.Position.X - width/2, gameObject.Position.Y - height/2}
 
 	sc := drawingArea.Scale
-	offX := drawingArea.Offset.x
-	offY := drawingArea.Offset.y
+	offX := drawingArea.Offset.X
+	offY := drawingArea.Offset.Y
 
-	x := float32(topLeftCorner.x)*float32(sc) + float32(offX)
-	y := float32(topLeftCorner.y)*float32(sc) + float32(offY)
+	x := float32(topLeftCorner.X)*float32(sc) + float32(offX)
+	y := float32(topLeftCorner.Y)*float32(sc) + float32(offY)
 	w := float32(width) * float32(sc)
 	h := float32(height) * float32(sc)
 
 	image := drawingArea.boardImage
 
-	// if takes the coordinates in pixels, WHY THE FUCK ARE THEY FLOAT32???????????
 	vector.DrawFilledRect(image, x, y, w, h, color.Black, false)
 }
 
@@ -69,11 +68,11 @@ type BallSprite struct {
 
 func (ballSprite BallSprite) Draw(drawingArea *DrawingArea, gameObject GameObject) {
 	sc := drawingArea.Scale
-	offX := drawingArea.Offset.x
-	offY := drawingArea.Offset.y
+	offX := drawingArea.Offset.X
+	offY := drawingArea.Offset.Y
 
-	x := float32(gameObject.Position.x)*float32(sc) + float32(offX)
-	y := float32(gameObject.Position.y)*float32(sc) + float32(offY)
+	x := float32(gameObject.Position.X)*float32(sc) + float32(offX)
+	y := float32(gameObject.Position.Y)*float32(sc) + float32(offY)
 	r := float32(ballSprite.R) * float32(sc)
 
 	image := drawingArea.boardImage
@@ -92,14 +91,14 @@ func (imageSprite ImageSprite) Draw(drawingArea *DrawingArea, gameObject GameObj
 	h := imageSprite.Image.Bounds().Max.Y - imageSprite.Image.Bounds().Min.Y
 
 	sc := drawingArea.Scale
-	offX := drawingArea.Offset.x
-	offY := drawingArea.Offset.y
+	offX := drawingArea.Offset.X
+	offY := drawingArea.Offset.Y
 
 	op.GeoM.Reset()
 	op.GeoM.Translate(-float64(w)/2, -float64(h)/2)
 	op.GeoM.Rotate(gameObject.Rotation)
 	op.GeoM.Scale(sc, sc)
-	op.GeoM.Translate(gameObject.Position.x*sc+offX, gameObject.Position.y*sc+offY)
+	op.GeoM.Translate(gameObject.Position.X*sc+offX, gameObject.Position.Y*sc+offY)
 
 	image := drawingArea.boardImage
 
@@ -119,14 +118,14 @@ type DefaultWeapon struct {
 func (dw *DefaultWeapon) Shoot(origin Vector2D, rotation float64) {
 	for _, bullet := range dw.clip {
 		if !bullet.Active {
-			bullet.Position.x = origin.x
-			bullet.Position.y = origin.y
+			bullet.Position.X = origin.X
+			bullet.Position.Y = origin.Y
 
 			bullet.Rotation = rotation
 
 			sin, cos := math.Sincos(rotation)
-			bullet.Speed.x = cos * BULLET_SPEED
-			bullet.Speed.y = sin * BULLET_SPEED
+			bullet.Speed.X = cos * BULLET_SPEED
+			bullet.Speed.Y = sin * BULLET_SPEED
 
 			bullet.Active = true
 			break
@@ -149,6 +148,6 @@ type GameObject struct {
 }
 
 func (gameObject *GameObject) Move() {
-	gameObject.Position.x += gameObject.Speed.x
-	gameObject.Position.y += gameObject.Speed.y
+	gameObject.Position.X += gameObject.Speed.X
+	gameObject.Position.Y += gameObject.Speed.Y
 }

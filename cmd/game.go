@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"image/color"
 	"log"
@@ -20,7 +21,7 @@ const (
 )
 
 const (
-	STATE_MAP_CREATING = iota
+	STATE_MAZE_CREATING = iota
 	STATE_GAME_RUNNING
 	STATE_GAME_ENDING
 )
@@ -52,58 +53,60 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 }
 
 func (g *Game) Update() error {
+	if *CONNECTION_MODE == CONNECTION_MODE_CLIENT {
+		char := g.Characters[0]
+
+		char.input.Update()
+
+		msg, err := json.Marshal(char.input)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		err = g.client.WriteMessage(msg)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		if char.input.Shoot {
+			char.input.Shoot = false
+		}
+
+		g.UpdateGameFromServer()
+
+		return nil
+	}
+
 	for i, char := range g.Characters {
 		if !char.Active {
 			continue
 		}
 
-		char.input.Update()
+		if i == 1 {
+			// process client's character's input
+			msg := g.server.ReadMessage()
 
-		if i == 0 && *CONNECTION_MODE == CONNECTION_MODE_CLIENT {
-			msg, err := json.Marshal(char.input)
+			var input Input
+			err := json.Unmarshal(msg, &input)
 			if err != nil {
-				log.Fatal(err)
+				continue
 			}
 
-			err = g.client.WriteMessage(msg)
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			if char.input.Shoot {
-				char.input.Shoot = false
-			}
-
-			// continue
-		} else if *CONNECTION_MODE == CONNECTION_MODE_SERVER {
-			if i == 1 {
-				msg := g.server.ReadMessage()
-
-				var newInput Input
-				err := json.Unmarshal(msg, &newInput)
-				if err != nil {
-					continue
-				}
-
-				char.input = newInput
-
-				char.ProcessInput()
-			} else {
-				char.ProcessInput()
-			}
+			char.input = input
 		} else {
-			char.ProcessInput()
+			char.input.Update()
 		}
 
+		char.ProcessInput()
+
 		char.Move()
+
 		g.DetectCharacterToWallCollision(char)
 	}
 
-	for _, bullet := range g.Bullets {
-		bullet.Move()
-	}
+	for i := 0; i < len(g.Bullets); i++ {
+		bullet := g.Bullets[i]
 
-	for _, bullet := range g.Bullets {
 		if !bullet.Active {
 			continue
 		}
@@ -130,54 +133,51 @@ func (g *Game) Update() error {
 		}
 	}
 
-	if *CONNECTION_MODE == CONNECTION_MODE_CLIENT {
-		g.UpdateGameFromServer()
-		return nil
-	} else /* if *CONNECTION_MODE == CONNECTION_MODE_SERVER */ {
-		switch g.state {
-		case STATE_MAP_CREATING:
-			g.Reset()
-			g.SetupLevel()
-			g.itemSpawnTicker = time.NewTicker(ITEM_SPAWN_INTERVAL * time.Second)
-			// g.SendMapToClient()
-			g.leftAlive = 2
-			g.state = STATE_GAME_RUNNING
-		case STATE_GAME_RUNNING:
-			select {
-			case <-g.itemSpawnTicker.C:
-				g.SpawnItem()
-			default:
-				if g.leftAlive <= 1 {
-					g.stateEndingTimer = time.NewTimer(STATE_GAME_ENDING_TIMER_SECONDS * time.Second)
-					g.state = STATE_GAME_ENDING
+	switch g.state {
+	case STATE_MAZE_CREATING:
+		g.Reset()
+		g.itemSpawnTicker = time.NewTicker(ITEM_SPAWN_INTERVAL * time.Second)
+		h, w, walls := g.SetupLevel()
+		g.SendMazeToClient(h, w, walls)
+		g.leftAlive = 2
+		g.state = STATE_GAME_RUNNING
+
+	case STATE_GAME_RUNNING:
+		select {
+		case <-g.itemSpawnTicker.C:
+			g.SpawnItem()
+		default:
+			if g.leftAlive <= 1 {
+				g.stateEndingTimer = time.NewTimer(STATE_GAME_ENDING_TIMER_SECONDS * time.Second)
+				g.state = STATE_GAME_ENDING
+			}
+		}
+
+	case STATE_GAME_ENDING:
+		select {
+		case <-g.stateEndingTimer.C:
+			for _, char := range g.Characters {
+				if char.Active {
+					g.CharactersScores[char.ID]++
+					break
 				}
 			}
-		case STATE_GAME_ENDING:
-			select {
-			case <-g.stateEndingTimer.C:
-				for _, char := range g.Characters {
-					if char.Active {
-						g.CharactersScores[char.ID]++
-						break
-					}
-				}
-				g.state = STATE_MAP_CREATING
-			default:
-			}
+			g.state = STATE_MAZE_CREATING
 		default:
 		}
+
+	default:
+		return errors.New("invalid state")
 	}
 
-	// if *CONNECTION_MODE == CONNECTION_MODE_SERVER {
-	// 	msg, err := json.Marshal(g)
-	// 	if err != nil {
-	// 		log.Fatal(err)
-	// 	}
-	// 	err = g.server.WriteThingsMessage(msg)
-	// 	if err != nil {
-	// 		log.Fatal(err)
-	// 	}
-	// }
+	msg, err := json.Marshal(g)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = g.server.WriteThingsMessage(msg)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	return nil
 }

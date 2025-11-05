@@ -18,27 +18,23 @@ const (
 
 var TILE_ID_SEQUENCE = 0
 
-type WallsDTO struct {
-	Walls []Wall `json:"walls"`
-}
-
 type Bullet struct {
 	R float64
 	GameObject
-	Hitbox
-	Sprite
+	Hitbox `json:"-"`
+	Sprite `json:"-"`
 }
 
 type Wall struct {
 	GameObject
-	Hitbox
-	Sprite
+	Hitbox `json:"-"`
+	Sprite `json:"-"`
 }
 
 type Character struct {
 	GameObject
-	Hitbox
-	Sprite
+	Hitbox `json:"-"`
+	Sprite `json:"-"`
 	input  Input
 	weapon Weapon
 }
@@ -52,8 +48,8 @@ type ControlSettings struct {
 }
 
 func (c *Character) ProcessInput() {
-	c.Speed.x = 0.0
-	c.Speed.y = 0.0
+	c.Speed.X = 0.0
+	c.Speed.Y = 0.0
 
 	if c.input.RotateRight {
 		c.Rotation += CHARACTER_ROTATION_SPEED
@@ -65,22 +61,22 @@ func (c *Character) ProcessInput() {
 
 	if c.input.MoveForward {
 		sin, cos := math.Sincos(c.Rotation)
-		c.Speed.x = cos * CHARACTER_SPEED
-		c.Speed.y = sin * CHARACTER_SPEED
+		c.Speed.X = cos * CHARACTER_SPEED
+		c.Speed.Y = sin * CHARACTER_SPEED
 	}
 
 	if c.input.MoveBackward {
 		sin, cos := math.Sincos(c.Rotation)
-		c.Speed.x = -cos * CHARACTER_SPEED * 5 / 6
-		c.Speed.y = -sin * CHARACTER_SPEED * 5 / 6
+		c.Speed.X = -cos * CHARACTER_SPEED * 5 / 6
+		c.Speed.Y = -sin * CHARACTER_SPEED * 5 / 6
 	}
 
 	if c.input.Shoot {
 		c.input.Shoot = false
 		sin, cos := math.Sincos(c.Rotation)
 		origin := Vector2D{
-			x: c.Position.x + cos*(float64(CHARACTER_WIDTH)/2),
-			y: c.Position.y + sin*(float64(CHARACTER_WIDTH)/2),
+			X: c.Position.X + cos*(float64(CHARACTER_WIDTH)/2),
+			Y: c.Position.Y + sin*(float64(CHARACTER_WIDTH)/2),
 		}
 
 		c.weapon.Shoot(origin, c.Rotation)
@@ -94,10 +90,10 @@ func (c *Character) getCorners() []Vector2D {
 	hh := float64(CHARACTER_WIDTH) / 2
 
 	return []Vector2D{
-		rotatePoint(c.Position.x-hw, c.Position.y-hh, c.Position.x, c.Position.y, c.Rotation),
-		rotatePoint(c.Position.x+hw, c.Position.y-hh, c.Position.x, c.Position.y, c.Rotation),
-		rotatePoint(c.Position.x+hw, c.Position.y+hh, c.Position.x, c.Position.y, c.Rotation),
-		rotatePoint(c.Position.x-hw, c.Position.y+hh, c.Position.x, c.Position.y, c.Rotation),
+		rotatePoint(c.Position.X-hw, c.Position.Y-hh, c.Position.X, c.Position.Y, c.Rotation),
+		rotatePoint(c.Position.X+hw, c.Position.Y-hh, c.Position.X, c.Position.Y, c.Rotation),
+		rotatePoint(c.Position.X+hw, c.Position.Y+hh, c.Position.X, c.Position.Y, c.Rotation),
+		rotatePoint(c.Position.X-hw, c.Position.Y+hh, c.Position.X, c.Position.Y, c.Rotation),
 	}
 }
 
@@ -108,10 +104,10 @@ func (w *Wall) GetCorners() []Vector2D {
 	}
 
 	corners := []Vector2D{
-		{w.Position.x - width/2, w.Position.y - height/2},
-		{w.Position.x + width/2, w.Position.y - height/2},
-		{w.Position.x - width/2, w.Position.y + height/2},
-		{w.Position.x + width/2, w.Position.y + height/2},
+		{w.Position.X - width/2, w.Position.Y - height/2},
+		{w.Position.X + width/2, w.Position.Y - height/2},
+		{w.Position.X - width/2, w.Position.Y + height/2},
+		{w.Position.X + width/2, w.Position.Y + height/2},
 	}
 
 	return corners
@@ -203,10 +199,10 @@ func (g *Game) getClosestWall1(b *Bullet) *Wall {
 		L := l * (b.R/minDist - 1)
 		t := L / b.Speed.length()
 
-		b.Position.x -= t * b.Speed.x
-		b.Position.y -= t * b.Speed.y
+		b.Position.X -= t * b.Speed.X
+		b.Position.Y -= t * b.Speed.Y
 
-		b.Speed.y = -b.Speed.y
+		b.Speed.Y = -b.Speed.Y
 	}
 
 	return nil
@@ -280,8 +276,8 @@ func (g *Game) DetectBulletToWallCollision(b *Bullet) {
 
 func (g *Game) DetectBulletToCharacterCollision(b *Bullet, c *Character) (isCollision bool) {
 	// Сдвигаем снаряд в локальную систему координат прямоугольника
-	dx := b.Position.x - c.Position.x
-	dy := b.Position.y - c.Position.y
+	dx := b.Position.X - c.Position.X
+	dy := b.Position.Y - c.Position.Y
 
 	sin, cos := math.Sincos(c.Rotation)
 
@@ -306,12 +302,12 @@ func (g *Game) DetectBulletToCharacterCollision(b *Bullet, c *Character) (isColl
 
 func (c *Character) Copy(c2 *Character) {
 	if c2 == nil {
-		c.Position.x = 99999
-		c.Position.y = 99999
+		c.Position.X = 99999
+		c.Position.Y = 99999
 		return
 	}
 
-	c.Position.x = c2.Position.x
-	c.Position.y = c2.Position.y
+	c.Position.X = c2.Position.X
+	c.Position.Y = c2.Position.Y
 	c.Rotation = c2.Rotation
 }

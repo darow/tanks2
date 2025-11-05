@@ -5,10 +5,6 @@ import (
 	"math/rand"
 )
 
-var (
-	wd WallsDTO
-)
-
 type Coordinates struct {
 	i, j int
 }
@@ -56,20 +52,22 @@ func getSceneCoordinates(i, j int) Vector2D {
 	return Vector2D{float64(j-1)*(wh-ww) + wh/2, float64(i-1)*(wh-ww) + wh/2}
 }
 
-func (g *Game) SetupLevel() {
-	N := rand.Intn(MAX_BOARD_HEIGHT-MIN_BOARD_HEIGHT) + MIN_BOARD_HEIGHT
-	M := rand.Intn(MAX_BOARD_WIDTH-MIN_BOARD_WIDTH) + MIN_BOARD_WIDTH
+func (g *Game) SetupLevel() (int, int, []Wall) {
+	h := rand.Intn(MAX_BOARD_HEIGHT-MIN_BOARD_HEIGHT) + MIN_BOARD_HEIGHT
+	w := rand.Intn(MAX_BOARD_WIDTH-MIN_BOARD_WIDTH) + MIN_BOARD_WIDTH
 
-	g.CreateMap(N, M)
-	g.SetDrawingSettings(N, M)
-	g.SetCharacters(N, M)
+	walls := g.CreateMaze(h, w)
+	g.SetDrawingSettings(h, w)
+	g.SetCharacters(h, w)
+
+	return h, w, walls
 }
 
-func (g *Game) SetCharacters(N, M int) {
+func (g *Game) SetCharacters(h, w int) {
 	spawnPlaces := []Vector2D{}
 	for range g.Characters {
-		i := rand.Intn(N) + 1
-		j := rand.Intn(M) + 1
+		i := rand.Intn(h) + 1
+		j := rand.Intn(w) + 1
 		spawnPlace := getSceneCoordinates(i, j)
 		spawnPlaces = append(spawnPlaces, spawnPlace)
 	}
@@ -80,31 +78,33 @@ func (g *Game) SetCharacters(N, M int) {
 			continue
 		}
 
-		char.Position.x = spawnPlaces[i].x
-		char.Position.y = spawnPlaces[i].y
+		char.Position.X = spawnPlaces[i].X
+		char.Position.Y = spawnPlaces[i].Y
 
 		char.Rotation = 0.0
 
-		char.Speed.x = 0
-		char.Speed.y = 0
+		char.Speed.X = 0
+		char.Speed.Y = 0
 
 		i++
 	}
 }
 
-func (g *Game) CreateMap(N, M int) {
+func (g *Game) CreateMaze(h, w int) []Wall {
 	g.Walls = make([]Wall, 0)
 
-	g.Maze = createMaze(N, M)
+	g.Maze = createMaze(h, w)
 	g.Walls = buildMaze(g.Maze, g.Walls)
+
+	return g.Walls
 }
 
-func (g *Game) SetDrawingSettings(N, M int) {
+func (g *Game) SetDrawingSettings(h, w int) {
 	areaHeight := g.mainArea.Height
 	areaWidth := g.mainArea.Width
 
-	mazeHeight := float64(N*(WALL_HEIGHT-WALL_WIDTH) + WALL_WIDTH)
-	mazeWidth := float64(M*(WALL_HEIGHT-WALL_WIDTH) + WALL_WIDTH)
+	mazeHeight := float64(h*(WALL_HEIGHT-WALL_WIDTH) + WALL_WIDTH)
+	mazeWidth := float64(w*(WALL_HEIGHT-WALL_WIDTH) + WALL_WIDTH)
 
 	scalingFactor := min(areaHeight/mazeHeight, areaWidth/mazeWidth)
 
@@ -119,7 +119,7 @@ func (g *Game) SetDrawingSettings(N, M int) {
 	g.mainArea = newMainArea
 }
 
-func getRandomDirection(node Coordinates, prevDir, N, M int) int {
+func getRandomDirection(prevDir int) int {
 	distribution := [4]float32{0.25, 0.25, 0.25, 0.25}
 
 	if prevDir != -1 {
@@ -205,7 +205,7 @@ func createMaze(N, M int) [][]MazeNode {
 	dirIndex := -1
 	count := 0
 	for count < N*M {
-		dirIndex = getRandomDirection(root, dirIndex, N, M)
+		dirIndex = getRandomDirection(dirIndex)
 
 		switch dirIndex {
 		case 0:
@@ -281,7 +281,7 @@ func buildMaze(mazeNodes [][]MazeNode, walls []Wall) []Wall {
 				w := Wall{
 					GameObject: GameObject{
 						Active:   true,
-						Position: Vector2D{nodeCenter.x, nodeCenter.y - (wh-ww)/2},
+						Position: Vector2D{nodeCenter.X, nodeCenter.Y - (wh-ww)/2},
 						Rotation: 0.0,
 					},
 					Hitbox: RectangleHitbox{WALL_WIDTH, WALL_HEIGHT},
@@ -296,7 +296,7 @@ func buildMaze(mazeNodes [][]MazeNode, walls []Wall) []Wall {
 				w := Wall{
 					GameObject: GameObject{
 						Active:   true,
-						Position: Vector2D{nodeCenter.x - (wh-ww)/2, nodeCenter.y},
+						Position: Vector2D{nodeCenter.X - (wh-ww)/2, nodeCenter.Y},
 						Rotation: math.Pi / 2,
 					},
 					Hitbox: RectangleHitbox{WALL_WIDTH, WALL_HEIGHT},
@@ -328,28 +328,11 @@ func (g *Game) Reset() {
 		char.input.Shoot = false
 	}
 
-	g.mainArea = g.mainArea.parent
+	if g.mainArea.parent != nil {
+		g.mainArea = g.mainArea.parent
+	}
 }
 
 func (g *Game) SpawnItem() {
 
 }
-
-// func (g *Game) SendMapToClient() {
-// 	wd = WallsDTO{}
-
-// 	for key := range g.Walls {
-// 		wd.Walls = append(wd.Walls, key)
-// 	}
-
-// 	msg, err := json.Marshal(wd)
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-
-// 	err = g.server.WriteMapMessage(msg)
-
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-// }
