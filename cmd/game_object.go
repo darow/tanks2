@@ -4,6 +4,8 @@ import (
 	"image/color"
 	"math"
 
+	"myebiten/internal/models"
+
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/vector"
 )
@@ -14,26 +16,18 @@ var (
 )
 
 type Hitbox interface {
-	Hit(this *GameObject, hb Hitbox, other *GameObject)
+	Hit(this *models.GameObject, hb Hitbox, other *models.GameObject)
 }
 
 type Sprite interface {
-	Draw(drawingArea *DrawingArea, gameObject GameObject)
+	Draw(drawingArea *models.DrawingArea, gameObject models.GameObject)
 }
 
 type RectangleHitbox struct {
 	W, H float64
 }
 
-func (rectHB RectangleHitbox) Hit(this *GameObject, hb Hitbox, other *GameObject) {
-
-}
-
-type CircleHitbox struct {
-	r float64
-}
-
-func (circleHB CircleHitbox) Hit(this *GameObject, hb Hitbox, other *GameObject) {
+func (rectHB RectangleHitbox) Hit(this *models.GameObject, hb Hitbox, other *models.GameObject) {
 
 }
 
@@ -41,12 +35,12 @@ type RectangleSprite struct {
 	W, H float64
 }
 
-func (rectangleSprite RectangleSprite) Draw(drawingArea *DrawingArea, gameObject GameObject) {
+func (rectangleSprite RectangleSprite) Draw(drawingArea *models.DrawingArea, gameObject models.GameObject) {
 	width, height := rectangleSprite.W, rectangleSprite.H
 	if gameObject.Rotation == 0.0 {
 		width, height = height, width
 	}
-	topLeftCorner := Vector2D{gameObject.Position.X - width/2, gameObject.Position.Y - height/2}
+	topLeftCorner := models.Vector2D{gameObject.Position.X - width/2, gameObject.Position.Y - height/2}
 
 	sc := drawingArea.Scale
 	offX := drawingArea.Offset.X
@@ -57,34 +51,16 @@ func (rectangleSprite RectangleSprite) Draw(drawingArea *DrawingArea, gameObject
 	w := float32(width) * float32(sc)
 	h := float32(height) * float32(sc)
 
-	image := drawingArea.boardImage
+	image := drawingArea.BoardImage
 
 	vector.DrawFilledRect(image, x, y, w, h, color.Black, false)
-}
-
-type BallSprite struct {
-	R float64
-}
-
-func (ballSprite BallSprite) Draw(drawingArea *DrawingArea, gameObject GameObject) {
-	sc := drawingArea.Scale
-	offX := drawingArea.Offset.X
-	offY := drawingArea.Offset.Y
-
-	x := float32(gameObject.Position.X)*float32(sc) + float32(offX)
-	y := float32(gameObject.Position.Y)*float32(sc) + float32(offY)
-	r := float32(ballSprite.R) * float32(sc)
-
-	image := drawingArea.boardImage
-
-	vector.DrawFilledCircle(image, x, y, r, color.Black, false)
 }
 
 type ImageSprite struct {
 	*ebiten.Image
 }
 
-func (imageSprite ImageSprite) Draw(drawingArea *DrawingArea, gameObject GameObject) {
+func (imageSprite ImageSprite) Draw(drawingArea *models.DrawingArea, gameObject models.GameObject) {
 	op := &ebiten.DrawImageOptions{}
 
 	w := imageSprite.Image.Bounds().Max.X - imageSprite.Image.Bounds().Min.X
@@ -100,22 +76,22 @@ func (imageSprite ImageSprite) Draw(drawingArea *DrawingArea, gameObject GameObj
 	op.GeoM.Scale(sc, sc)
 	op.GeoM.Translate(gameObject.Position.X*sc+offX, gameObject.Position.Y*sc+offY)
 
-	image := drawingArea.boardImage
+	image := drawingArea.BoardImage
 
 	image.DrawImage(imageSprite.Image, op)
 }
 
 type Weapon interface {
-	Shoot(origin Vector2D, rotation float64)
+	Shoot(origin models.Vector2D, rotation float64)
 	Discharge()
 }
 
 type DefaultWeapon struct {
-	clip     []*Bullet
+	clip     []*models.Bullet
 	cooldown int
 }
 
-func (dw *DefaultWeapon) Shoot(origin Vector2D, rotation float64) {
+func (dw *DefaultWeapon) Shoot(origin models.Vector2D, rotation float64) {
 	for _, bullet := range dw.clip {
 		if !bullet.Active {
 			bullet.Position.X = origin.X
@@ -137,17 +113,4 @@ func (dw *DefaultWeapon) Shoot(origin Vector2D, rotation float64) {
 
 func (dw *DefaultWeapon) Discharge() {
 
-}
-
-type GameObject struct {
-	ID       int
-	Active   bool
-	Position Vector2D
-	Rotation float64
-	Speed    Vector2D
-}
-
-func (gameObject *GameObject) Move() {
-	gameObject.Position.X += gameObject.Speed.X
-	gameObject.Position.Y += gameObject.Speed.Y
 }

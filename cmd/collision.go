@@ -2,17 +2,11 @@ package main
 
 import (
 	"math"
+
+	"myebiten/internal/models"
 )
 
-type Vector2D struct {
-	X, Y float64
-}
-
-func (v Vector2D) length() float64 {
-	return math.Sqrt(v.X*v.X + v.Y*v.Y)
-}
-
-func rotatePoint(px, py, cx, cy, angle float64) Vector2D {
+func RotatePoint(px, py, cx, cy, angle float64) models.Vector2D {
 	s := math.Sin(angle)
 	c := math.Cos(angle)
 
@@ -28,21 +22,21 @@ func rotatePoint(px, py, cx, cy, angle float64) Vector2D {
 	xnew += cx
 	ynew += cy
 
-	return Vector2D{xnew, ynew}
+	return models.Vector2D{xnew, ynew}
 }
 
-func dot(a, b Vector2D) float64 {
+func dot(a, b models.Vector2D) float64 {
 	return a.X*b.X + a.Y*b.Y
 }
 
-func getAxes(points []Vector2D) []Vector2D {
-	axes := []Vector2D{}
+func getAxes(points []models.Vector2D) []models.Vector2D {
+	axes := []models.Vector2D{}
 	for i := 0; i < len(points); i++ {
 		p1 := points[i]
 		p2 := points[(i+1)%len(points)]
-		edge := Vector2D{p2.X - p1.X, p2.Y - p1.Y}
+		edge := models.Vector2D{p2.X - p1.X, p2.Y - p1.Y}
 		// Нормаль
-		axis := Vector2D{-edge.Y, edge.X}
+		axis := models.Vector2D{-edge.Y, edge.X}
 		// Нормализуем
 		length := math.Hypot(axis.X, axis.Y)
 		axis.X /= length
@@ -52,7 +46,7 @@ func getAxes(points []Vector2D) []Vector2D {
 	return axes
 }
 
-func projectPolygon(axis Vector2D, points []Vector2D) (float64, float64) {
+func projectPolygon(axis models.Vector2D, points []models.Vector2D) (float64, float64) {
 	min := dot(points[0], axis)
 	max := min
 	for _, p := range points[1:] {
@@ -67,7 +61,7 @@ func projectPolygon(axis Vector2D, points []Vector2D) (float64, float64) {
 	return min, max
 }
 
-func squareDistance(v Vector2D, w Vector2D) float64 {
+func squareDistance(v models.Vector2D, w models.Vector2D) float64 {
 	return (v.X-w.X)*(v.X-w.X) + (v.Y-w.Y)*(v.Y-w.Y)
 }
 

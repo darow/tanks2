@@ -10,6 +10,7 @@ import (
 
 	"myebiten/cmd/websocket/client"
 	"myebiten/cmd/websocket/server"
+	"myebiten/internal/models"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/text"
@@ -34,14 +35,14 @@ type Game struct {
 	leftAlive int
 
 	Maze             [][]MazeNode
-	Bullets          []*Bullet
+	Bullets          []*models.Bullet
 	Walls            []Wall
 	Characters       []*Character
 	CharactersScores []uint
 
-	mainArea *DrawingArea
-	UIArea1  *DrawingArea
-	UIArea2  *DrawingArea
+	mainArea *models.DrawingArea
+	UIArea1  *models.DrawingArea
+	UIArea2  *models.DrawingArea
 
 	server     *server.Server
 	client     *client.Client
@@ -200,7 +201,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 	for _, bullet := range g.Bullets {
 		if bullet.Active {
-			bullet.Draw(g.mainArea, bullet.GameObject)
+			bullet.Draw(g.mainArea)
 		}
 	}
 	// if DEBUG_MODE {

@@ -3,6 +3,8 @@ package main
 import (
 	"math"
 	"math/rand"
+
+	"myebiten/internal/models"
 )
 
 type Coordinates struct {
@@ -32,7 +34,7 @@ func (mNode *MazeNode) addDirection(x, y int) {
 	}
 }
 
-func getMazeCoordinates(pos Vector2D) (int, int) {
+func getMazeCoordinates(pos models.Vector2D) (int, int) {
 	wh := float64(WALL_HEIGHT)
 	ww := float64(WALL_WIDTH)
 
@@ -45,11 +47,11 @@ func getMazeCoordinates(pos Vector2D) (int, int) {
 	return i + 1, j + 1
 }
 
-func getSceneCoordinates(i, j int) Vector2D {
+func getSceneCoordinates(i, j int) models.Vector2D {
 	wh := float64(WALL_HEIGHT)
 	ww := float64(WALL_WIDTH)
 
-	return Vector2D{float64(j-1)*(wh-ww) + wh/2, float64(i-1)*(wh-ww) + wh/2}
+	return models.Vector2D{float64(j-1)*(wh-ww) + wh/2, float64(i-1)*(wh-ww) + wh/2}
 }
 
 func (g *Game) SetupLevel() (int, int, []Wall) {
@@ -64,7 +66,7 @@ func (g *Game) SetupLevel() (int, int, []Wall) {
 }
 
 func (g *Game) SetCharacters(h, w int) {
-	spawnPlaces := []Vector2D{}
+	spawnPlaces := []models.Vector2D{}
 	for range g.Characters {
 		i := rand.Intn(h) + 1
 		j := rand.Intn(w) + 1
@@ -111,8 +113,8 @@ func (g *Game) SetDrawingSettings(h, w int) {
 	mazeHeight *= scalingFactor
 	mazeWidth *= scalingFactor
 
-	newDrawingSettings := DrawingSettings{
-		Offset: Vector2D{(areaWidth - mazeWidth) / 2, (areaHeight - mazeHeight) / 2},
+	newDrawingSettings := models.DrawingSettings{
+		Offset: models.Vector2D{(areaWidth - mazeWidth) / 2, (areaHeight - mazeHeight) / 2},
 		Scale:  scalingFactor,
 	}
 	newMainArea := g.mainArea.NewArea(mazeHeight, mazeWidth, newDrawingSettings)
@@ -279,9 +281,9 @@ func buildMaze(mazeNodes [][]MazeNode, walls []Wall) []Wall {
 
 			if horizontalWall {
 				w := Wall{
-					GameObject: GameObject{
+					GameObject: models.GameObject{
 						Active:   true,
-						Position: Vector2D{nodeCenter.X, nodeCenter.Y - (wh-ww)/2},
+						Position: models.Vector2D{nodeCenter.X, nodeCenter.Y - (wh-ww)/2},
 						Rotation: 0.0,
 					},
 					Hitbox: RectangleHitbox{WALL_WIDTH, WALL_HEIGHT},
@@ -294,9 +296,9 @@ func buildMaze(mazeNodes [][]MazeNode, walls []Wall) []Wall {
 
 			if verticalWall {
 				w := Wall{
-					GameObject: GameObject{
+					GameObject: models.GameObject{
 						Active:   true,
-						Position: Vector2D{nodeCenter.X - (wh-ww)/2, nodeCenter.Y},
+						Position: models.Vector2D{nodeCenter.X - (wh-ww)/2, nodeCenter.Y},
 						Rotation: math.Pi / 2,
 					},
 					Hitbox: RectangleHitbox{WALL_WIDTH, WALL_HEIGHT},
@@ -328,8 +330,8 @@ func (g *Game) Reset() {
 		char.input.Shoot = false
 	}
 
-	if g.mainArea.parent != nil {
-		g.mainArea = g.mainArea.parent
+	if g.mainArea.Parent != nil {
+		g.mainArea = g.mainArea.Parent
 	}
 }
 

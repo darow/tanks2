@@ -3,6 +3,8 @@ package main
 import (
 	"math"
 
+	"myebiten/internal/models"
+
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
@@ -18,21 +20,14 @@ const (
 
 var TILE_ID_SEQUENCE = 0
 
-type Bullet struct {
-	R float64
-	GameObject
-	Hitbox `json:"-"`
-	Sprite `json:"-"`
-}
-
 type Wall struct {
-	GameObject
+	models.GameObject
 	Hitbox `json:"-"`
 	Sprite `json:"-"`
 }
 
 type Character struct {
-	GameObject
+	models.GameObject
 	Hitbox `json:"-"`
 	Sprite `json:"-"`
 	input  Input
@@ -74,7 +69,7 @@ func (c *Character) ProcessInput() {
 	if c.input.Shoot {
 		c.input.Shoot = false
 		sin, cos := math.Sincos(c.Rotation)
-		origin := Vector2D{
+		origin := models.Vector2D{
 			X: c.Position.X + cos*(float64(CHARACTER_WIDTH)/2),
 			Y: c.Position.Y + sin*(float64(CHARACTER_WIDTH)/2),
 		}
@@ -84,26 +79,26 @@ func (c *Character) ProcessInput() {
 
 }
 
-func (c *Character) getCorners() []Vector2D {
+func (c *Character) getCorners() []models.Vector2D {
 	// Получаем точки углов персонажа (с учётом поворота)
 	hw := float64(CHARACTER_WIDTH) / 2
 	hh := float64(CHARACTER_WIDTH) / 2
 
-	return []Vector2D{
-		rotatePoint(c.Position.X-hw, c.Position.Y-hh, c.Position.X, c.Position.Y, c.Rotation),
-		rotatePoint(c.Position.X+hw, c.Position.Y-hh, c.Position.X, c.Position.Y, c.Rotation),
-		rotatePoint(c.Position.X+hw, c.Position.Y+hh, c.Position.X, c.Position.Y, c.Rotation),
-		rotatePoint(c.Position.X-hw, c.Position.Y+hh, c.Position.X, c.Position.Y, c.Rotation),
+	return []models.Vector2D{
+		RotatePoint(c.Position.X-hw, c.Position.Y-hh, c.Position.X, c.Position.Y, c.Rotation),
+		RotatePoint(c.Position.X+hw, c.Position.Y-hh, c.Position.X, c.Position.Y, c.Rotation),
+		RotatePoint(c.Position.X+hw, c.Position.Y+hh, c.Position.X, c.Position.Y, c.Rotation),
+		RotatePoint(c.Position.X-hw, c.Position.Y+hh, c.Position.X, c.Position.Y, c.Rotation),
 	}
 }
 
-func (w *Wall) GetCorners() []Vector2D {
+func (w *Wall) GetCorners() []models.Vector2D {
 	var height, width float64 = WALL_HEIGHT, WALL_WIDTH
 	if w.Rotation == 0.0 {
 		height, width = width, height
 	}
 
-	corners := []Vector2D{
+	corners := []models.Vector2D{
 		{w.Position.X - width/2, w.Position.Y - height/2},
 		{w.Position.X + width/2, w.Position.Y - height/2},
 		{w.Position.X - width/2, w.Position.Y + height/2},
@@ -117,7 +112,7 @@ func (g *Game) getClosestWalls(c *Character) []*Wall {
 	return nil
 }
 
-func (g *Game) getClosestWall1(b *Bullet) *Wall {
+func (g *Game) getClosestWall1(b *models.Bullet) *Wall {
 	wh := float64(WALL_HEIGHT)
 	ww := float64(WALL_WIDTH)
 
@@ -183,10 +178,10 @@ func (g *Game) getClosestWall1(b *Bullet) *Wall {
 	}
 
 	if verticalReflection {
-		cosine := math.Abs(b.Speed.X) / b.Speed.length()
+		cosine := math.Abs(b.Speed.X) / b.Speed.Length()
 		l := minDist / cosine
 		L := l * (b.R/minDist - 1)
-		t := L / b.Speed.length()
+		t := L / b.Speed.Length()
 
 		b.Position.X -= t * b.Speed.X
 		b.Position.Y -= t * b.Speed.Y
@@ -194,10 +189,10 @@ func (g *Game) getClosestWall1(b *Bullet) *Wall {
 		b.Speed.X = -b.Speed.X
 
 	} else if horizontalReflection {
-		cosine := math.Abs(b.Speed.Y) / b.Speed.length()
+		cosine := math.Abs(b.Speed.Y) / b.Speed.Length()
 		l := minDist / cosine
 		L := l * (b.R/minDist - 1)
-		t := L / b.Speed.length()
+		t := L / b.Speed.Length()
 
 		b.Position.X -= t * b.Speed.X
 		b.Position.Y -= t * b.Speed.Y
@@ -215,13 +210,13 @@ func (g *Game) DetectCharacterToWallCollision(c *Character) {
 	}
 }
 
-func (g *Game) DetectBulletToWallCollision(b *Bullet) {
+func (g *Game) DetectBulletToWallCollision(b *models.Bullet) {
 	closestWall := g.getClosestWall1(b)
 	if closestWall == nil {
 		return
 	}
 
-	b.Hit(&b.GameObject, closestWall.Hitbox, &closestWall.GameObject)
+	//b.Hit(&b.GameObject, closestWall.Hitbox, &closestWall.GameObject)
 	// isCollision, isHorizontal := false, false
 
 	// if int(b.position.x)%WALL_HEIGHT <= WALL_WIDTH {
@@ -274,7 +269,7 @@ func (g *Game) DetectBulletToWallCollision(b *Bullet) {
 	// }
 }
 
-func (g *Game) DetectBulletToCharacterCollision(b *Bullet, c *Character) (isCollision bool) {
+func (g *Game) DetectBulletToCharacterCollision(b *models.Bullet, c *Character) (isCollision bool) {
 	// Сдвигаем снаряд в локальную систему координат прямоугольника
 	dx := b.Position.X - c.Position.X
 	dy := b.Position.Y - c.Position.Y

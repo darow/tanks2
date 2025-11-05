@@ -8,6 +8,7 @@ import (
 	"log"
 	"syscall"
 
+	"myebiten/internal/models"
 	images "myebiten/resources"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -34,7 +35,7 @@ var (
 	MIN_BOARD_HEIGHT = 3
 	MIN_BOARD_WIDTH  = 3
 
-	DRAWING_OFFSET = Vector2D{300, 50}
+	DRAWING_OFFSET = models.Vector2D{300, 50}
 	DRAWING_SCALE  = 1.0
 
 	CHARACTER_IMAGE_TO_RESIZE image.Image
@@ -94,22 +95,20 @@ func main() {
 		shootButton:        ebiten.KeySlash,
 	}
 
-	bullets := make([]*Bullet, 20)
+	bullets := make([]*models.Bullet, 20)
 
 	for i := range bullets {
-		bullets[i] = &Bullet{
-			R:      float64(BULLET_RADIUS),
-			Hitbox: CircleHitbox{BULLET_RADIUS},
-			Sprite: BallSprite{BULLET_RADIUS},
+		bullets[i] = &models.Bullet{
+			R: float64(BULLET_RADIUS),
 		}
 	}
 
 	characters := []*Character{
 		{
-			GameObject: GameObject{
+			GameObject: models.GameObject{
 				ID:       0,
 				Active:   true,
-				Position: Vector2D{400, 400},
+				Position: models.Vector2D{400, 400},
 				Rotation: 0.0,
 			},
 
@@ -121,10 +120,10 @@ func main() {
 			},
 		},
 		{
-			GameObject: GameObject{
+			GameObject: models.GameObject{
 				ID:       1,
 				Active:   true,
-				Position: Vector2D{700, 500},
+				Position: models.Vector2D{700, 500},
 				Rotation: 0.0,
 			},
 
@@ -139,10 +138,10 @@ func main() {
 
 	image := ebiten.NewImage(SCREEN_SIZE_WIDTH, SCREEN_SIZE_HEIGHT)
 
-	mainArea := &DrawingArea{
-		boardImage: image,
-		DrawingSettings: DrawingSettings{
-			Offset: Vector2D{float64(SCREEN_SIZE_WIDTH) / 20, 0.0},
+	mainArea := &models.DrawingArea{
+		BoardImage: image,
+		DrawingSettings: models.DrawingSettings{
+			Offset: models.Vector2D{float64(SCREEN_SIZE_WIDTH) / 20, 0.0},
 			Scale:  1.0,
 		},
 		Height: float64(SCREEN_SIZE_HEIGHT),
