@@ -112,6 +112,8 @@ func (g *Game) Update() error {
 			continue
 		}
 
+		bullet.Move()
+
 		g.DetectBulletToWallCollision(bullet)
 
 		for _, char := range g.Characters {

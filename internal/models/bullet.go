@@ -7,12 +7,8 @@ import (
 )
 
 type Bullet struct {
-	ID       int
-	Active   bool
-	Position Vector2D
-	Rotation float64
-	Speed    Vector2D
-	R        float64
+	GameObject
+	R float64
 }
 
 func (b Bullet) Draw(drawingArea *DrawingArea) {
