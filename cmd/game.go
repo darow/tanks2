@@ -115,7 +115,7 @@ func (g *Game) Update() error {
 				continue
 			}
 
-			if g.DetectBulletToCharacterCollision(bullet, char) {
+			if false { //g.DetectBulletToCharacterCollision(bullet, char) {
 				bullet.Active = false
 				char.Active = false
 				g.leftAlive--

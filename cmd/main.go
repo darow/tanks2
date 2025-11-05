@@ -94,7 +94,7 @@ func main() {
 		shootButton:        ebiten.KeySlash,
 	}
 
-	bullets := make([]*Bullet, 10)
+	bullets := make([]*Bullet, 20)
 
 	for i := range bullets {
 		bullets[i] = &Bullet{

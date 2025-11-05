@@ -12,7 +12,7 @@ const (
 	CHARACTER_SPEED          = 5
 	CHARACTER_WIDTH          = 70
 	BULLET_SPEED             = 6
-	WALL_HEIGHT              = 170 // equal to cell size in labyrinth
+	WALL_HEIGHT              = 170
 	WALL_WIDTH               = 10
 )
 
@@ -125,22 +125,20 @@ func (g *Game) getClosestWall1(b *Bullet) *Wall {
 	wh := float64(WALL_HEIGHT)
 	ww := float64(WALL_WIDTH)
 
-	a := b.Position.x / (wh - ww)
-	ai := int(math.Floor(a))
+	i, j := getMazeCoordinates(b.Position)
+	nodeCenter := getSceneCoordinates(i, j)
 
-	c := b.Position.y / (wh - ww)
-	ci := int(math.Floor(c))
-
-	nodeCenter := getSceneCoordinates(ci+1, ai+1)
-
-	if ci >= len(g.Maze)-2 || ci < 0 || ai >= len(g.Maze[0])-2 || ai < 0 {
+	if i >= len(g.Maze)-1 || i < 0 || j >= len(g.Maze[0])-1 || j < 0 {
 		return nil
 	}
 
-	distToTop := (nodeCenter.y + wh/2 - ww) - b.Position.y
-	distToRight := (nodeCenter.y + wh/2 - ww) - b.Position.x
-	distToBottom := b.Position.y - (nodeCenter.y - wh/2 + ww)
+	// Here top and bottom mean how these directions appear on the screen
+	// meaning, that distToTop actually measures the distance to the wall
+	// that is stored as MazeNode.bottomWall
+	distToTop := b.Position.y - (nodeCenter.y - wh/2 + ww)
+	distToRight := (nodeCenter.x + wh/2 - ww) - b.Position.x
 	distToLeft := b.Position.x - (nodeCenter.x - wh/2 + ww)
+	distToBottom := (nodeCenter.y + wh/2 - ww) - b.Position.y
 
 	var wallToHit *Wall
 	minDist := min(distToBottom, distToLeft, distToRight, distToTop)
@@ -149,15 +147,61 @@ func (g *Game) getClosestWall1(b *Bullet) *Wall {
 		return nil
 	}
 
-	// yeaaaaahh, this needs to be perfromed for 3 other walls and also
-	// additionally for some other
-	// it's very hard to figure out the good solution ;(
-	if minDist == distToBottom {
-		wallToHit = g.Maze[ci+1][ai+1].bottomWall
+	var horizontalReflection, verticalReflection bool = false, false
 
-		cosine := b.Speed.x / b.Speed.length()
+	if minDist == distToBottom {
+		// again, because of mismatch between how directions are logically stored
+		// and how they are presented on screen bottom reflection requires MazeNode.topWall
+		wallToHit = g.Maze[i][j].topWall
+		if wallToHit != nil {
+			// fmt.Printf("opa\n")
+			// fmt.Printf("i = %d, j = %d  nodeCenter: %v pos: %v    ", i, j, nodeCenter, b.Position)
+			// fmt.Printf("minDist: %f\n", minDist)
+			horizontalReflection = true
+		}
+	}
+
+	if minDist == distToTop {
+		// see previous comments in this function
+		wallToHit = g.Maze[i][j].bottomWall
+		if wallToHit != nil {
+			// fmt.Printf("lulw\n")
+			// fmt.Printf("i = %d, j = %d  nodeCenter: %v pos: %v    ", i, j, nodeCenter, b.Position)
+			// fmt.Printf("minDist: %f\n", minDist)
+			horizontalReflection = true
+		}
+	}
+
+	if minDist == distToLeft {
+		wallToHit = g.Maze[i][j].leftWall
+		if wallToHit != nil {
+			verticalReflection = true
+		}
+	}
+
+	if minDist == distToRight {
+		wallToHit = g.Maze[i][j].rightWall
+		if wallToHit != nil {
+			verticalReflection = true
+		}
+	}
+
+	if verticalReflection {
+		cosine := math.Abs(b.Speed.x) / b.Speed.length()
 		l := minDist / cosine
-		t := l * (b.R/minDist - 1)
+		L := l * (b.R/minDist - 1)
+		t := L / b.Speed.length()
+
+		b.Position.x -= t * b.Speed.x
+		b.Position.y -= t * b.Speed.y
+
+		b.Speed.x = -b.Speed.x
+
+	} else if horizontalReflection {
+		cosine := math.Abs(b.Speed.y) / b.Speed.length()
+		l := minDist / cosine
+		L := l * (b.R/minDist - 1)
+		t := L / b.Speed.length()
 
 		b.Position.x -= t * b.Speed.x
 		b.Position.y -= t * b.Speed.y
@@ -165,45 +209,7 @@ func (g *Game) getClosestWall1(b *Bullet) *Wall {
 		b.Speed.y = -b.Speed.y
 	}
 
-	// check intersections with protrusions (fuck)
-
-	return wallToHit
-}
-
-func lineIntersect(p1, p2, position Vector2D, speed Vector2D) (Vector2D, bool) {
-	// Line segment AB represented as p1 to p2
-	// Line represented as position + t * speed
-
-	// Direction vectors for the segments
-	dx := p2.x - p1.x
-	dy := p2.y - p1.y
-	ldx := speed.x
-	ldy := speed.y
-
-	denom := dx*ldy - dy*ldx
-
-	if math.Abs(denom) < 1e-6 {
-		// Lines are parallel or collinear
-		return Vector2D{}, false
-	}
-
-	deltaX := position.x - p1.x
-	deltaY := position.y - p1.y
-
-	t := (deltaX*ldy - deltaY*ldx) / denom
-	u := (deltaX*dy - deltaY*dx) / denom
-
-	// Check if the intersection is within the segment
-	if t >= 0 && t <= 1 && u >= 0 {
-		// Calculate intersection point
-		intersection := Vector2D{
-			x: position.x + u*ldx,
-			y: position.y + u*ldy,
-		}
-		return intersection, true
-	}
-
-	return Vector2D{}, false
+	return nil
 }
 
 func (g *Game) DetectCharacterToWallCollision(c *Character) {
