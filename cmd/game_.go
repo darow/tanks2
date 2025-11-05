@@ -36,10 +36,10 @@ func getMazeCoordinates(pos Vector2D) (int, int) {
 	wh := float64(WALL_HEIGHT)
 	ww := float64(WALL_WIDTH)
 
-	x := (pos.x - ww/2) / (wh - ww)
+	x := (pos.X - ww/2) / (wh - ww)
 	j := int(math.Floor(x))
 
-	y := (pos.y - ww/2) / (wh - ww)
+	y := (pos.Y - ww/2) / (wh - ww)
 	i := int(math.Floor(y))
 
 	return i + 1, j + 1

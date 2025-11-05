@@ -131,10 +131,10 @@ func (g *Game) getClosestWall1(b *Bullet) *Wall {
 	// Here top and bottom mean how these directions appear on the screen
 	// meaning, that distToTop actually measures the distance to the wall
 	// that is stored as MazeNode.bottomWall
-	distToTop := b.Position.y - (nodeCenter.y - wh/2 + ww)
-	distToRight := (nodeCenter.x + wh/2 - ww) - b.Position.x
-	distToLeft := b.Position.x - (nodeCenter.x - wh/2 + ww)
-	distToBottom := (nodeCenter.y + wh/2 - ww) - b.Position.y
+	distToTop := b.Position.Y - (nodeCenter.Y - wh/2 + ww)
+	distToRight := (nodeCenter.X + wh/2 - ww) - b.Position.X
+	distToLeft := b.Position.X - (nodeCenter.X - wh/2 + ww)
+	distToBottom := (nodeCenter.Y + wh/2 - ww) - b.Position.Y
 
 	var wallToHit *Wall
 	minDist := min(distToBottom, distToLeft, distToRight, distToTop)
@@ -183,18 +183,18 @@ func (g *Game) getClosestWall1(b *Bullet) *Wall {
 	}
 
 	if verticalReflection {
-		cosine := math.Abs(b.Speed.x) / b.Speed.length()
+		cosine := math.Abs(b.Speed.X) / b.Speed.length()
 		l := minDist / cosine
 		L := l * (b.R/minDist - 1)
 		t := L / b.Speed.length()
 
-		b.Position.x -= t * b.Speed.x
-		b.Position.y -= t * b.Speed.y
+		b.Position.X -= t * b.Speed.X
+		b.Position.Y -= t * b.Speed.Y
 
-		b.Speed.x = -b.Speed.x
+		b.Speed.X = -b.Speed.X
 
 	} else if horizontalReflection {
-		cosine := math.Abs(b.Speed.y) / b.Speed.length()
+		cosine := math.Abs(b.Speed.Y) / b.Speed.length()
 		l := minDist / cosine
 		L := l * (b.R/minDist - 1)
 		t := L / b.Speed.length()
