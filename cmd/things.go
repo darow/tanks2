@@ -112,7 +112,7 @@ func (g *Game) getClosestWalls(c *Character) []*Wall {
 	return nil
 }
 
-func (g *Game) getClosestWall1(b *models.Bullet) *Wall {
+func (g *Game) DetectBulletToWallCollision(b *models.Bullet) {
 	wh := float64(WALL_HEIGHT)
 	ww := float64(WALL_WIDTH)
 
@@ -120,7 +120,7 @@ func (g *Game) getClosestWall1(b *models.Bullet) *Wall {
 	nodeCenter := getSceneCoordinates(i, j)
 
 	if i >= len(g.Maze)-1 || i < 0 || j >= len(g.Maze[0])-1 || j < 0 {
-		return nil
+		return
 	}
 
 	// Here top and bottom mean how these directions appear on the screen
@@ -131,11 +131,10 @@ func (g *Game) getClosestWall1(b *models.Bullet) *Wall {
 	distToLeft := b.Position.X - (nodeCenter.X - wh/2 + ww)
 	distToBottom := (nodeCenter.Y + wh/2 - ww) - b.Position.Y
 
-	var wallToHit *Wall
 	minDist := min(distToBottom, distToLeft, distToRight, distToTop)
 
 	if minDist > b.R {
-		return nil
+		return
 	}
 
 	var horizontalReflection, verticalReflection bool = false, false
@@ -143,38 +142,47 @@ func (g *Game) getClosestWall1(b *models.Bullet) *Wall {
 	if minDist == distToBottom {
 		// again, because of mismatch between how directions are logically stored
 		// and how they are presented on screen bottom reflection requires MazeNode.topWall
-		wallToHit = g.Maze[i][j].topWall
-		if wallToHit != nil {
-			// fmt.Printf("opa\n")
-			// fmt.Printf("i = %d, j = %d  nodeCenter: %v pos: %v    ", i, j, nodeCenter, b.Position)
-			// fmt.Printf("minDist: %f\n", minDist)
-			horizontalReflection = true
-		}
+
+		// check if the top wall is present
+		horizontalReflection = !g.Maze[i][j].up
+
+		// if close to the left check 3 corner walls, same if close to the right
+		// if at least one corner wall is present, perform reflection
+		verticalReflection = (distToLeft < b.R) && !(g.Maze[i][j].up && g.Maze[i+1][j].left && g.Maze[i][j-1].up) ||
+			(distToRight < b.R) && !(g.Maze[i][j].up && g.Maze[i+1][j].right && g.Maze[i][j+1].up)
+
+		// prioritize reflection of the main wall
+		verticalReflection = verticalReflection && !horizontalReflection
 	}
 
 	if minDist == distToTop {
-		// see previous comments in this function
-		wallToHit = g.Maze[i][j].bottomWall
-		if wallToHit != nil {
-			// fmt.Printf("lulw\n")
-			// fmt.Printf("i = %d, j = %d  nodeCenter: %v pos: %v    ", i, j, nodeCenter, b.Position)
-			// fmt.Printf("minDist: %f\n", minDist)
-			horizontalReflection = true
-		}
+		// check comments in minDist == distToBottom block
+		horizontalReflection = !g.Maze[i][j].down
+
+		verticalReflection = (distToLeft < b.R) && !(g.Maze[i][j].down && g.Maze[i-1][j].left && g.Maze[i][j-1].down) ||
+			(distToRight < b.R) && !(g.Maze[i][j].down && g.Maze[i-1][j].right && g.Maze[i][j+1].down)
+
+		verticalReflection = verticalReflection && !horizontalReflection
 	}
 
 	if minDist == distToLeft {
-		wallToHit = g.Maze[i][j].leftWall
-		if wallToHit != nil {
-			verticalReflection = true
-		}
+		// check comments in minDist == distToBottom block
+		verticalReflection = !g.Maze[i][j].left
+
+		horizontalReflection = (distToTop < b.R) && !(g.Maze[i][j].down && g.Maze[i-1][j].left && g.Maze[i][j-1].down) ||
+			(distToBottom < b.R) && !(g.Maze[i][j].up && g.Maze[i+1][j].left && g.Maze[i][j-1].up)
+
+		horizontalReflection = horizontalReflection && !verticalReflection
 	}
 
 	if minDist == distToRight {
-		wallToHit = g.Maze[i][j].rightWall
-		if wallToHit != nil {
-			verticalReflection = true
-		}
+		// check comments in minDist == distToBottom block
+		verticalReflection = !g.Maze[i][j].right
+
+		horizontalReflection = (distToTop < b.R) && !(g.Maze[i][j].down && g.Maze[i-1][j].right && g.Maze[i][j+1].down) ||
+			(distToBottom < b.R) && !(g.Maze[i][j].up && g.Maze[i+1][j].right && g.Maze[i][j+1].up)
+
+		horizontalReflection = horizontalReflection && !verticalReflection
 	}
 
 	if verticalReflection {
@@ -199,8 +207,6 @@ func (g *Game) getClosestWall1(b *models.Bullet) *Wall {
 
 		b.Speed.Y = -b.Speed.Y
 	}
-
-	return nil
 }
 
 func (g *Game) DetectCharacterToWallCollision(c *Character) {
@@ -208,65 +214,6 @@ func (g *Game) DetectCharacterToWallCollision(c *Character) {
 	for _, w := range closestWalls {
 		c.detectWallCollision(*w)
 	}
-}
-
-func (g *Game) DetectBulletToWallCollision(b *models.Bullet) {
-	closestWall := g.getClosestWall1(b)
-	if closestWall == nil {
-		return
-	}
-
-	//b.Hit(&b.GameObject, closestWall.Hitbox, &closestWall.GameObject)
-	// isCollision, isHorizontal := false, false
-
-	// if int(b.position.x)%WALL_HEIGHT <= WALL_WIDTH {
-	// 	wallToCollide := Wall{
-	// 		X:          uint16(math.Floor(b.position.x / WALL_HEIGHT)),
-	// 		Y:          uint16(math.Floor(b.position.y / WALL_HEIGHT)),
-	// 		Horizontal: false,
-	// 	}
-
-	// 	_, ok := g.Walls[wallToCollide]
-
-	// 	if ok {
-	// 		isCollision, isHorizontal = true, false
-	// 		//end of wall
-	// 		yInWall := math.Mod(b.position.y, WALL_HEIGHT)
-	// 		ySpeed := math.Abs(dy)
-	// 		if yInWall <= ySpeed && dy > 0 || WALL_HEIGHT-yInWall <= ySpeed && dy < 0 {
-	// 			isHorizontal = true
-	// 		}
-	// 	}
-	// }
-
-	// if int(b.position.y)%WALL_HEIGHT <= WALL_WIDTH {
-	// 	wallToCollide := Wall{
-	// 		X:          uint16(math.Floor(b.position.x / WALL_HEIGHT)),
-	// 		Y:          uint16(math.Floor(b.position.y / WALL_HEIGHT)),
-	// 		Horizontal: true,
-	// 	}
-
-	// 	_, ok := g.Walls[wallToCollide]
-
-	// 	if ok {
-	// 		isCollision, isHorizontal = true, true
-
-	// 		//end of wall
-	// 		xInWall := math.Mod(b.position.x, WALL_HEIGHT)
-	// 		xSpeed := math.Abs(dx)
-	// 		if xInWall <= xSpeed && dx > 0 || WALL_HEIGHT-xInWall <= xSpeed && dx < 0 {
-	// 			isHorizontal = false
-	// 		}
-	// 	}
-	// }
-
-	// if isCollision {
-	// 	if isHorizontal {
-	// 		b.rotation = -b.rotation
-	// 	}
-
-	// 	b.rotation = math.Remainder(math.Pi-b.rotation, 2*math.Pi)
-	// }
 }
 
 func (g *Game) DetectBulletToCharacterCollision(b *models.Bullet, c *Character) (isCollision bool) {

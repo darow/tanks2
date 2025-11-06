@@ -11,6 +11,10 @@ type Coordinates struct {
 	i, j int
 }
 
+// Struct for one square of a maze, consists of 4 bools
+// each encoding whether there's a passage in corresponding direction
+// which confusingly means that if e.g. up is true, then topWall is nil
+// (this has already caused some confusion so probably it will warrant a rework in the future)
 type MazeNode struct {
 	up    bool
 	down  bool
@@ -260,6 +264,16 @@ func createMaze(N, M int) [][]MazeNode {
 	}
 
 	mazeNodes = addConnections(mazeNodes)
+
+	// fill in missing connections on all nodes for consistency
+	for i := 1; i < N+1; i++ {
+		for j := 1; j < M+1; j++ {
+			mazeNodes[i][j].up = mazeNodes[i][j].up || mazeNodes[i+1][j].down
+			mazeNodes[i][j].right = mazeNodes[i][j].right || mazeNodes[i][j+1].left
+			mazeNodes[i][j].down = mazeNodes[i][j].down || mazeNodes[i-1][j].up
+			mazeNodes[i][j].left = mazeNodes[i][j].left || mazeNodes[i][j-1].right
+		}
+	}
 
 	return mazeNodes
 }
