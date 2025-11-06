@@ -63,7 +63,6 @@ func (g *Game) SetupLevel() (int, int, []Wall) {
 	w := rand.Intn(MAX_BOARD_WIDTH-MIN_BOARD_WIDTH) + MIN_BOARD_WIDTH
 
 	walls := g.CreateMaze(h, w)
-	g.SetDrawingSettings(h, w)
 	g.SetCharacters(h, w)
 
 	return h, w, walls
@@ -329,7 +328,7 @@ func buildMaze(mazeNodes [][]MazeNode, walls []Wall) []Wall {
 	return walls
 }
 
-func (g *Game) Reset() {
+func (g *Game) Reset(h, w int) {
 	for _, bullet := range g.Bullets {
 		bullet.Active = false
 	}
@@ -347,6 +346,8 @@ func (g *Game) Reset() {
 	if g.mainArea.Parent != nil {
 		g.mainArea = g.mainArea.Parent
 	}
+
+	g.SetDrawingSettings(h, w)
 }
 
 func (g *Game) SpawnItem() {

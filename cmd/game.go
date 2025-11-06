@@ -138,9 +138,9 @@ func (g *Game) Update() error {
 
 	switch g.state {
 	case STATE_MAZE_CREATING:
-		g.Reset()
 		g.itemSpawnTicker = time.NewTicker(ITEM_SPAWN_INTERVAL * time.Second)
 		h, w, walls := g.SetupLevel()
+		g.Reset(h, w)
 		if *CONNECTION_MODE != CONNECTION_MODE_OFFLINE {
 			g.SendMazeToClient(h, w, walls)
 		}
