@@ -99,10 +99,10 @@ func (w *Wall) GetCorners() []models.Vector2D {
 	}
 
 	corners := []models.Vector2D{
-		{w.Position.X - width/2, w.Position.Y - height/2},
-		{w.Position.X + width/2, w.Position.Y - height/2},
-		{w.Position.X - width/2, w.Position.Y + height/2},
-		{w.Position.X + width/2, w.Position.Y + height/2},
+		{X: w.Position.X - width/2, Y: w.Position.Y - height/2},
+		{X: w.Position.X + width/2, Y: w.Position.Y - height/2},
+		{X: w.Position.X - width/2, Y: w.Position.Y + height/2},
+		{X: w.Position.X + width/2, Y: w.Position.Y + height/2},
 	}
 
 	return corners

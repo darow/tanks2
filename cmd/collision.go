@@ -22,7 +22,7 @@ func RotatePoint(px, py, cx, cy, angle float64) models.Vector2D {
 	xnew += cx
 	ynew += cy
 
-	return models.Vector2D{xnew, ynew}
+	return models.Vector2D{X: xnew, Y: ynew}
 }
 
 func dot(a, b models.Vector2D) float64 {
@@ -34,9 +34,9 @@ func getAxes(points []models.Vector2D) []models.Vector2D {
 	for i := 0; i < len(points); i++ {
 		p1 := points[i]
 		p2 := points[(i+1)%len(points)]
-		edge := models.Vector2D{p2.X - p1.X, p2.Y - p1.Y}
+		edge := models.Vector2D{X: p2.X - p1.X, Y: p2.Y - p1.Y}
 		// Нормаль
-		axis := models.Vector2D{-edge.Y, edge.X}
+		axis := models.Vector2D{X: -edge.Y, Y: edge.X}
 		// Нормализуем
 		length := math.Hypot(axis.X, axis.Y)
 		axis.X /= length

@@ -40,7 +40,7 @@ func (rectangleSprite RectangleSprite) Draw(drawingArea *models.DrawingArea, gam
 	if gameObject.Rotation == 0.0 {
 		width, height = height, width
 	}
-	topLeftCorner := models.Vector2D{gameObject.Position.X - width/2, gameObject.Position.Y - height/2}
+	topLeftCorner := models.Vector2D{X: gameObject.Position.X - width/2, Y: gameObject.Position.Y - height/2}
 
 	sc := drawingArea.Scale
 	offX := drawingArea.Offset.X

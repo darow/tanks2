@@ -51,7 +51,7 @@ func getSceneCoordinates(i, j int) models.Vector2D {
 	wh := float64(WALL_HEIGHT)
 	ww := float64(WALL_WIDTH)
 
-	return models.Vector2D{float64(j-1)*(wh-ww) + wh/2, float64(i-1)*(wh-ww) + wh/2}
+	return models.Vector2D{X: float64(j-1)*(wh-ww) + wh/2, Y: float64(i-1)*(wh-ww) + wh/2}
 }
 
 func (g *Game) SetupLevel() (int, int, []Wall) {
@@ -114,7 +114,7 @@ func (g *Game) SetDrawingSettings(h, w int) {
 	mazeWidth *= scalingFactor
 
 	newDrawingSettings := models.DrawingSettings{
-		Offset: models.Vector2D{(areaWidth - mazeWidth) / 2, (areaHeight - mazeHeight) / 2},
+		Offset: models.Vector2D{X: (areaWidth - mazeWidth) / 2, Y: (areaHeight - mazeHeight) / 2},
 		Scale:  scalingFactor,
 	}
 	newMainArea := g.mainArea.NewArea(mazeHeight, mazeWidth, newDrawingSettings)
@@ -283,7 +283,7 @@ func buildMaze(mazeNodes [][]MazeNode, walls []Wall) []Wall {
 				w := Wall{
 					GameObject: models.GameObject{
 						Active:   true,
-						Position: models.Vector2D{nodeCenter.X, nodeCenter.Y - (wh-ww)/2},
+						Position: models.Vector2D{X: nodeCenter.X, Y: nodeCenter.Y - (wh-ww)/2},
 						Rotation: 0.0,
 					},
 					Hitbox: RectangleHitbox{WALL_WIDTH, WALL_HEIGHT},
@@ -298,7 +298,7 @@ func buildMaze(mazeNodes [][]MazeNode, walls []Wall) []Wall {
 				w := Wall{
 					GameObject: models.GameObject{
 						Active:   true,
-						Position: models.Vector2D{nodeCenter.X - (wh-ww)/2, nodeCenter.Y},
+						Position: models.Vector2D{X: nodeCenter.X - (wh-ww)/2, Y: nodeCenter.Y},
 						Rotation: math.Pi / 2,
 					},
 					Hitbox: RectangleHitbox{WALL_WIDTH, WALL_HEIGHT},

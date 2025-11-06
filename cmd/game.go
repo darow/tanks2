@@ -83,7 +83,7 @@ func (g *Game) Update() error {
 			continue
 		}
 
-		if i == 1 {
+		if i == 1 && *CONNECTION_MODE == CONNECTION_MODE_SERVER {
 			// process client's character's input
 			msg := g.server.ReadMessage()
 
@@ -141,7 +141,9 @@ func (g *Game) Update() error {
 		g.Reset()
 		g.itemSpawnTicker = time.NewTicker(ITEM_SPAWN_INTERVAL * time.Second)
 		h, w, walls := g.SetupLevel()
-		g.SendMazeToClient(h, w, walls)
+		if *CONNECTION_MODE != CONNECTION_MODE_OFFLINE {
+			g.SendMazeToClient(h, w, walls)
+		}
 		g.leftAlive = 2
 		g.state = STATE_GAME_RUNNING
 
@@ -173,13 +175,15 @@ func (g *Game) Update() error {
 		return errors.New("invalid state")
 	}
 
-	msg, err := json.Marshal(g)
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = g.server.WriteThingsMessage(msg)
-	if err != nil {
-		log.Fatal(err)
+	if *CONNECTION_MODE == CONNECTION_MODE_SERVER {
+		msg, err := json.Marshal(g)
+		if err != nil {
+			log.Fatal(err)
+		}
+		err = g.server.WriteThingsMessage(msg)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	return nil

@@ -16,42 +16,42 @@ func TestGetMazeCoordinates(t *testing.T) {
 
 	testCases := []TestCase{
 		{
-			input:     models.Vector2D{0.0, 0.0},
+			input:     models.Vector2D{X: 0.0, Y: 0.0},
 			iExpected: 0,
 			jExpected: 0,
 		},
 		{
-			input:     models.Vector2D{10.0, 20.0},
+			input:     models.Vector2D{X: 10.0, Y: 20.0},
 			iExpected: 1,
 			jExpected: 1,
 		},
 		{
-			input:     models.Vector2D{200.0, 20.0},
+			input:     models.Vector2D{X: 200.0, Y: 20.0},
 			iExpected: 1,
 			jExpected: 2,
 		},
 		{
-			input:     models.Vector2D{5.0, 5.0},
+			input:     models.Vector2D{X: 5.0, Y: 5.0},
 			iExpected: 1,
 			jExpected: 1,
 		},
 		{
-			input:     models.Vector2D{205.0, 5.0},
+			input:     models.Vector2D{X: 205.0, Y: 5.0},
 			iExpected: 1,
 			jExpected: 2,
 		},
 		{
-			input:     models.Vector2D{205.0, 50.0},
+			input:     models.Vector2D{X: 205.0, Y: 50.0},
 			iExpected: 1,
 			jExpected: 2,
 		},
 		{
-			input:     models.Vector2D{195.0, 195.0},
+			input:     models.Vector2D{X: 195.0, Y: 195.0},
 			iExpected: 2,
 			jExpected: 2,
 		},
 		{
-			input:     models.Vector2D{195.0, 55.0},
+			input:     models.Vector2D{X: 195.0, Y: 55.0},
 			iExpected: 1,
 			jExpected: 2,
 		},

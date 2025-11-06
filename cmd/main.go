@@ -35,7 +35,7 @@ var (
 	MIN_BOARD_HEIGHT = 3
 	MIN_BOARD_WIDTH  = 3
 
-	DRAWING_OFFSET = models.Vector2D{300, 50}
+	DRAWING_OFFSET = models.Vector2D{X: 300, Y: 50}
 	DRAWING_SCALE  = 1.0
 
 	CHARACTER_IMAGE_TO_RESIZE image.Image
@@ -108,7 +108,7 @@ func main() {
 			GameObject: models.GameObject{
 				ID:       0,
 				Active:   true,
-				Position: models.Vector2D{400, 400},
+				Position: models.Vector2D{X: 400, Y: 400},
 				Rotation: 0.0,
 			},
 
@@ -123,7 +123,7 @@ func main() {
 			GameObject: models.GameObject{
 				ID:       1,
 				Active:   true,
-				Position: models.Vector2D{700, 500},
+				Position: models.Vector2D{X: 700, Y: 500},
 				Rotation: 0.0,
 			},
 
@@ -141,7 +141,7 @@ func main() {
 	mainArea := &models.DrawingArea{
 		BoardImage: image,
 		DrawingSettings: models.DrawingSettings{
-			Offset: models.Vector2D{float64(SCREEN_SIZE_WIDTH) / 20, 0.0},
+			Offset: models.Vector2D{X: float64(SCREEN_SIZE_WIDTH) / 20, Y: 0.0},
 			Scale:  1.0,
 		},
 		Height: float64(SCREEN_SIZE_HEIGHT),
