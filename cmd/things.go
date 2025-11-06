@@ -70,8 +70,8 @@ func (c *Character) ProcessInput() {
 		c.input.Shoot = false
 		sin, cos := math.Sincos(c.Rotation)
 		origin := models.Vector2D{
-			X: c.Position.X + cos*(float64(CHARACTER_WIDTH)/2),
-			Y: c.Position.Y + sin*(float64(CHARACTER_WIDTH)/2),
+			X: c.Position.X + cos*(float64(CHARACTER_WIDTH)/2+10),
+			Y: c.Position.Y + sin*(float64(CHARACTER_WIDTH)/2+10),
 		}
 
 		c.weapon.Shoot(origin, c.Rotation)
@@ -109,7 +109,12 @@ func (w *Wall) GetCorners() []models.Vector2D {
 }
 
 func (g *Game) getClosestWalls(c *Character) []*Wall {
-	return nil
+	result := make([]*Wall, 0)
+	for _, wall := range g.Walls {
+		result = append(result, &wall)
+	}
+
+	return result
 }
 
 func (g *Game) DetectBulletToWallCollision(b *models.Bullet) {
@@ -212,7 +217,10 @@ func (g *Game) DetectBulletToWallCollision(b *models.Bullet) {
 func (g *Game) DetectCharacterToWallCollision(c *Character) {
 	closestWalls := g.getClosestWalls(c)
 	for _, w := range closestWalls {
-		c.detectWallCollision(*w)
+		isCollide := c.detectWallCollision(*w)
+		if isCollide {
+			c.MoveBack()
+		}
 	}
 }
 

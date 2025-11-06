@@ -27,6 +27,11 @@ func (gameObject *GameObject) Move() {
 	gameObject.Position.Y += gameObject.Speed.Y
 }
 
+func (gameObject *GameObject) MoveBack() {
+	gameObject.Position.X -= gameObject.Speed.X
+	gameObject.Position.Y -= gameObject.Speed.Y
+}
+
 type DrawingArea struct {
 	DrawingSettings
 
