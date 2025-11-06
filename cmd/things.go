@@ -260,4 +260,6 @@ func (c *Character) Copy(c2 *Character) {
 	c.Position.X = c2.Position.X
 	c.Position.Y = c2.Position.Y
 	c.Rotation = c2.Rotation
+
+	c.Active = c2.Active
 }
