@@ -109,12 +109,73 @@ func (w *Wall) GetCorners() []models.Vector2D {
 }
 
 func (g *Game) getClosestWalls(c *Character) []*Wall {
-	result := make([]*Wall, 0)
-	for _, wall := range g.Walls {
-		result = append(result, &wall)
+	// yes, this is shit, I see it too, dw it will all change
+	i, j := getMazeCoordinates(c.Position)
+	k := 0
+	if g.Maze[i][j].topWall != nil {
+		wallsToCheck[k] = g.Maze[i][j].topWall
+		k++
+	}
+	if g.Maze[i][j].bottomWall != nil {
+		wallsToCheck[k] = g.Maze[i][j].bottomWall
+		k++
+	}
+	if g.Maze[i][j].leftWall != nil {
+		wallsToCheck[k] = g.Maze[i][j].leftWall
+		k++
+	}
+	if g.Maze[i][j].rightWall != nil {
+		wallsToCheck[k] = g.Maze[i][j].rightWall
+		k++
 	}
 
-	return result
+	if g.Maze[i-1][j].leftWall != nil {
+		wallsToCheck[k] = g.Maze[i-1][j].leftWall
+		k++
+	}
+	if g.Maze[i-1][j].rightWall != nil {
+		wallsToCheck[k] = g.Maze[i-1][j].rightWall
+		k++
+	}
+
+	if g.Maze[i+1][j].leftWall != nil {
+		wallsToCheck[k] = g.Maze[i+1][j].leftWall
+		k++
+	}
+	if g.Maze[i+1][j].rightWall != nil {
+		wallsToCheck[k] = g.Maze[i+1][j].rightWall
+		k++
+	}
+
+	if g.Maze[i][j-1].topWall != nil {
+		wallsToCheck[k] = g.Maze[i][j-1].topWall
+		k++
+	}
+	if g.Maze[i][j-1].bottomWall != nil {
+		wallsToCheck[k] = g.Maze[i][j-1].bottomWall
+		k++
+	}
+
+	if g.Maze[i][j+1].topWall != nil {
+		wallsToCheck[k] = g.Maze[i][j+1].topWall
+		k++
+	}
+	if g.Maze[i][j+1].bottomWall != nil {
+		wallsToCheck[k] = g.Maze[i][j+1].bottomWall
+		k++
+	}
+
+	return wallsToCheck[:k]
+}
+
+func (g *Game) DetectCharacterToWallCollision(c *Character) {
+	closestWalls := g.getClosestWalls(c)
+	for _, w := range closestWalls {
+		isCollide := c.detectWallCollision(*w)
+		if isCollide {
+			c.MoveBack()
+		}
+	}
 }
 
 func (g *Game) DetectBulletToWallCollision(b *models.Bullet) {
@@ -193,8 +254,8 @@ func (g *Game) DetectBulletToWallCollision(b *models.Bullet) {
 	if verticalReflection {
 		cosine := math.Abs(b.Speed.X) / b.Speed.Length()
 		l := minDist / cosine
-		L := l * (b.R/minDist - 1)
-		t := L / b.Speed.Length()
+		L := b.R / cosine
+		t := (L - l) / b.Speed.Length()
 
 		b.Position.X -= t * b.Speed.X
 		b.Position.Y -= t * b.Speed.Y
@@ -204,23 +265,13 @@ func (g *Game) DetectBulletToWallCollision(b *models.Bullet) {
 	} else if horizontalReflection {
 		cosine := math.Abs(b.Speed.Y) / b.Speed.Length()
 		l := minDist / cosine
-		L := l * (b.R/minDist - 1)
-		t := L / b.Speed.Length()
+		L := b.R / cosine
+		t := (L - l) / b.Speed.Length()
 
 		b.Position.X -= t * b.Speed.X
 		b.Position.Y -= t * b.Speed.Y
 
 		b.Speed.Y = -b.Speed.Y
-	}
-}
-
-func (g *Game) DetectCharacterToWallCollision(c *Character) {
-	closestWalls := g.getClosestWalls(c)
-	for _, w := range closestWalls {
-		isCollide := c.detectWallCollision(*w)
-		if isCollide {
-			c.MoveBack()
-		}
 	}
 }
 

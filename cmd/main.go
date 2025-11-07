@@ -141,11 +141,31 @@ func main() {
 	mainArea := &models.DrawingArea{
 		BoardImage: image,
 		DrawingSettings: models.DrawingSettings{
-			Offset: models.Vector2D{X: float64(SCREEN_SIZE_WIDTH) / 20, Y: 0.0},
+			Offset: models.Vector2D{X: 0.0, Y: float64(SCREEN_SIZE_HEIGHT) / 10},
 			Scale:  1.0,
 		},
-		Height: float64(SCREEN_SIZE_HEIGHT),
-		Width:  float64(SCREEN_SIZE_WIDTH) * 0.9,
+		Height: float64(SCREEN_SIZE_HEIGHT) * 0.8,
+		Width:  float64(SCREEN_SIZE_WIDTH),
+	}
+
+	UIArea1 := &models.DrawingArea{
+		BoardImage: image,
+		DrawingSettings: models.DrawingSettings{
+			Offset: models.Vector2D{X: 0.0, Y: 0.0},
+			Scale:  1.0,
+		},
+		Height: float64(SCREEN_SIZE_HEIGHT) * 0.1,
+		Width:  float64(SCREEN_SIZE_WIDTH),
+	}
+
+	UIArea2 := &models.DrawingArea{
+		BoardImage: image,
+		DrawingSettings: models.DrawingSettings{
+			Offset: models.Vector2D{X: 0.0, Y: float64(SCREEN_SIZE_HEIGHT) * 0.9},
+			Scale:  1.0,
+		},
+		Height: float64(SCREEN_SIZE_HEIGHT) * 0.1,
+		Width:  float64(SCREEN_SIZE_WIDTH),
 	}
 
 	game := &Game{
@@ -155,6 +175,8 @@ func main() {
 		Characters:       characters,
 		CharactersScores: []uint{0, 0},
 		mainArea:         mainArea,
+		UIArea1:          UIArea1,
+		UIArea2:          UIArea2,
 	}
 
 	if *CONNECTION_MODE != CONNECTION_MODE_OFFLINE && !SUCCESS_CONNECTION {

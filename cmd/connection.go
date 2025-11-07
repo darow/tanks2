@@ -96,7 +96,8 @@ func (g *Game) ReceiveMazeUpdates() {
 			g.Walls[i].Sprite = RectangleSprite{WALL_WIDTH, WALL_HEIGHT}
 		}
 
-		g.Reset(maze.H, maze.W)
+		g.Reset()
+		g.SetDrawingSettings(maze.H, maze.W)
 	}
 }
 

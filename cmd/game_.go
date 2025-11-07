@@ -63,6 +63,7 @@ func (g *Game) SetupLevel() (int, int, []Wall) {
 	w := rand.Intn(MAX_BOARD_WIDTH-MIN_BOARD_WIDTH) + MIN_BOARD_WIDTH
 
 	walls := g.CreateMaze(h, w)
+	g.SetDrawingSettings(h, w)
 	g.SetCharacters(h, w)
 
 	return h, w, walls
@@ -86,7 +87,7 @@ func (g *Game) SetCharacters(h, w int) {
 		char.Position.X = spawnPlaces[i].X
 		char.Position.Y = spawnPlaces[i].Y
 
-		char.Rotation = 0.0
+		char.Rotation = math.Pi / 2
 
 		char.Speed.X = 0
 		char.Speed.Y = 0
@@ -120,8 +121,7 @@ func (g *Game) SetDrawingSettings(h, w int) {
 		Offset: models.Vector2D{X: (areaWidth - mazeWidth) / 2, Y: (areaHeight - mazeHeight) / 2},
 		Scale:  scalingFactor,
 	}
-	newMainArea := g.mainArea.NewArea(mazeHeight, mazeWidth, newDrawingSettings)
-	g.mainArea = newMainArea
+	g.mainArea.NewArea(mazeHeight, mazeWidth, newDrawingSettings)
 }
 
 func getRandomDirection(prevDir int) int {
@@ -328,7 +328,7 @@ func buildMaze(mazeNodes [][]MazeNode, walls []Wall) []Wall {
 	return walls
 }
 
-func (g *Game) Reset(h, w int) {
+func (g *Game) Reset() {
 	for _, bullet := range g.Bullets {
 		bullet.Active = false
 	}
@@ -343,11 +343,7 @@ func (g *Game) Reset(h, w int) {
 		char.input.Shoot = false
 	}
 
-	if g.mainArea.Parent != nil {
-		g.mainArea = g.mainArea.Parent
-	}
-
-	g.SetDrawingSettings(h, w)
+	g.mainArea.Children = nil
 }
 
 func (g *Game) SpawnItem() {

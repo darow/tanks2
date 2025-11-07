@@ -27,6 +27,8 @@ const (
 	STATE_GAME_ENDING
 )
 
+var wallsToCheck []*Wall = make([]*Wall, 12)
+
 type Game struct {
 	stateEndingTimer *time.Timer
 	itemSpawnTicker  *time.Ticker
@@ -78,6 +80,45 @@ func (g *Game) Update() error {
 		return nil
 	}
 
+	switch g.state {
+	case STATE_MAZE_CREATING:
+		g.Reset()
+		g.itemSpawnTicker = time.NewTicker(ITEM_SPAWN_INTERVAL * time.Second)
+		h, w, walls := g.SetupLevel()
+		if *CONNECTION_MODE != CONNECTION_MODE_OFFLINE {
+			g.SendMazeToClient(h, w, walls)
+		}
+		g.leftAlive = 2
+		g.state = STATE_GAME_RUNNING
+
+	case STATE_GAME_RUNNING:
+		select {
+		case <-g.itemSpawnTicker.C:
+			g.SpawnItem()
+		default:
+			if g.leftAlive <= 1 {
+				g.stateEndingTimer = time.NewTimer(STATE_GAME_ENDING_TIMER_SECONDS * time.Second)
+				g.state = STATE_GAME_ENDING
+			}
+		}
+
+	case STATE_GAME_ENDING:
+		select {
+		case <-g.stateEndingTimer.C:
+			for _, char := range g.Characters {
+				if char.Active {
+					g.CharactersScores[char.ID]++
+					break
+				}
+			}
+			g.state = STATE_MAZE_CREATING
+		default:
+		}
+
+	default:
+		return errors.New("invalid state")
+	}
+
 	for i, char := range g.Characters {
 		if !char.Active {
 			continue
@@ -125,54 +166,8 @@ func (g *Game) Update() error {
 				bullet.Active = false
 				char.Active = false
 				g.leftAlive--
-
-				// if FEATURE_DECREASING_TANKS {
-				// 	g.Characters[charIndex].CurrentWidth--
-				// 	resizedCharacterImage := resize.Resize(g.Characters[charIndex].CurrentWidth, 0, CHARACTER_IMAGE_TO_RESIZE, resize.Lanczos3)
-				// 	g.Characters[charIndex].charImg = ebiten.NewImageFromImage(resizedCharacterImage)
-				// 	continue
-				// }
 			}
 		}
-	}
-
-	switch g.state {
-	case STATE_MAZE_CREATING:
-		g.itemSpawnTicker = time.NewTicker(ITEM_SPAWN_INTERVAL * time.Second)
-		h, w, walls := g.SetupLevel()
-		g.Reset(h, w)
-		if *CONNECTION_MODE != CONNECTION_MODE_OFFLINE {
-			g.SendMazeToClient(h, w, walls)
-		}
-		g.leftAlive = 2
-		g.state = STATE_GAME_RUNNING
-
-	case STATE_GAME_RUNNING:
-		select {
-		case <-g.itemSpawnTicker.C:
-			g.SpawnItem()
-		default:
-			if g.leftAlive <= 1 {
-				g.stateEndingTimer = time.NewTimer(STATE_GAME_ENDING_TIMER_SECONDS * time.Second)
-				g.state = STATE_GAME_ENDING
-			}
-		}
-
-	case STATE_GAME_ENDING:
-		select {
-		case <-g.stateEndingTimer.C:
-			for _, char := range g.Characters {
-				if char.Active {
-					g.CharactersScores[char.ID]++
-					break
-				}
-			}
-			g.state = STATE_MAZE_CREATING
-		default:
-		}
-
-	default:
-		return errors.New("invalid state")
 	}
 
 	if *CONNECTION_MODE == CONNECTION_MODE_SERVER {
@@ -193,49 +188,27 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	g.boardImage.Clear()
 	g.boardImage.Fill(COLOR_BACKGROUND)
 
+	mazeArea := g.mainArea.Children[0]
+
 	for _, wall := range g.Walls {
 		if wall.Active {
-			wall.Draw(g.mainArea, wall.GameObject)
+			wall.Draw(mazeArea, wall.GameObject)
 		}
 	}
 
 	for _, character := range g.Characters {
 		if character.Active {
-			character.Draw(g.mainArea, character.GameObject)
+			character.Draw(mazeArea, character.GameObject)
 		}
 	}
 
 	for _, bullet := range g.Bullets {
 		if bullet.Active {
-			bullet.Draw(g.mainArea)
+			bullet.Draw(mazeArea)
 		}
 	}
-	// if DEBUG_MODE {
-	// 	vector.DrawFilledCircle(g.boardImage, float32(w.X)*WALL_HEIGHT, float32(w.Y)*WALL_HEIGHT, 2, color.RGBA{0x00, 0xff, 0xff, 0xff}, false)
-	// 	vector.DrawFilledCircle(g.boardImage, float32(w.X)*WALL_HEIGHT+WALL_WIDTH, float32(w.Y)*WALL_HEIGHT+WALL_HEIGHT, 2, color.RGBA{0x00, 0xff, 0xff, 0xff}, false)
-	// }
-	// if DEBUG_MODE {
-	// 	charCorners := c.getCorners()
-	// 	for _, corner := range charCorners {
-	// 		vector.DrawFilledCircle(g.boardImage, float32(corner.x), float32(corner.y), float32(1), color.RGBA{0x0f, 0x0f, 0x0f, 0xff}, false)
-	// 	}
-	// }
 
 	text.Draw(g.boardImage, fmt.Sprintf("Player 1: %d        Player 2: %d", g.CharactersScores[0], g.CharactersScores[1]), REGULAR_FONT, 0, 0, color.Black)
-
-	// for i := range g.boardSizeY {
-	// 	for j := range g.boardSizeX {
-	// 		cx := j*WALL_HEIGHT + WALL_HEIGHT/2
-	// 		cy := i*WALL_HEIGHT + WALL_HEIGHT/2
-
-	// 		wh := float32(WALL_HEIGHT)
-	// 		ww := float32(WALL_WIDTH)
-
-	// 		vector.DrawFilledCircle(g.boardImage, float32(cx), float32(cy)-(wh-ww)/2, 1, color.RGBA{0xFF, 0x0, 0x0, 0x0}, false)
-	// 		vector.DrawFilledCircle(g.boardImage, float32(cx)-(wh-ww)/2, float32(cy), 1, color.RGBA{0xFF, 0x0, 0x0, 0x0}, false)
-	// 		vector.DrawFilledCircle(g.boardImage, float32(cx), float32(cy), 1, color.White, false)
-	// 	}
-	// }
 
 	screen.Clear()
 	screen.DrawImage(g.boardImage, &ebiten.DrawImageOptions{})
