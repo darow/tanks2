@@ -208,8 +208,14 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		}
 	}
 
-	text.Draw(g.boardImage, fmt.Sprintf("Player 1: %d        Player 2: %d", g.CharactersScores[0], g.CharactersScores[1]), REGULAR_FONT, 0, 0, color.Black)
+	for i, score := range g.CharactersScores {
+		DrawScore(g.UIArea2.Children[i], fmt.Sprintf("Player %d", i+1), score)
+	}
 
 	screen.Clear()
 	screen.DrawImage(g.boardImage, &ebiten.DrawImageOptions{})
+}
+
+func DrawScore(drawingArea *models.DrawingArea, name string, score uint) {
+	text.Draw(drawingArea.BoardImage, fmt.Sprintf("%s: %d", name, score), REGULAR_FONT, int(drawingArea.Offset.X), int(drawingArea.Offset.Y), color.Black)
 }

@@ -70,6 +70,3 @@ func (d *DrawingArea) NewArea(height, width float64, settings DrawingSettings) (
 	d.Children = append(d.Children, newArea)
 	return
 }
-
-type UIElement struct {
-}

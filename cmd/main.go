@@ -168,6 +168,9 @@ func main() {
 		Width:  float64(SCREEN_SIZE_WIDTH),
 	}
 
+	UIArea2.NewArea(0.99*UIArea2.Height, 0.2*UIArea2.Width, models.DrawingSettings{Offset: models.Vector2D{X: 0.2 * UIArea2.Width, Y: 0.5 * UIArea2.Height}, Scale: 1.0})
+	UIArea2.NewArea(0.99*UIArea2.Height, 0.2*UIArea2.Width, models.DrawingSettings{Offset: models.Vector2D{X: 0.6 * UIArea2.Width, Y: 0.5 * UIArea2.Height}, Scale: 1.0})
+
 	game := &Game{
 		boardImage:       image,
 		leftAlive:        2,
