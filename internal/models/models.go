@@ -40,7 +40,6 @@ type DrawingArea struct {
 	Height float64
 	Width  float64
 
-	Parent   *DrawingArea
 	Children []*DrawingArea
 }
 
@@ -63,8 +62,6 @@ func (d *DrawingArea) NewArea(height, width float64, settings DrawingSettings) (
 			},
 			Scale: d.Scale * settings.Scale,
 		},
-
-		Parent: d,
 	}
 
 	d.Children = append(d.Children, newArea)
