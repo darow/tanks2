@@ -87,26 +87,26 @@ type Weapon interface {
 }
 
 type DefaultWeapon struct {
-	clip     []*models.Bullet
+	clip     *models.Pool
 	cooldown int
 }
 
 func (dw *DefaultWeapon) Shoot(origin models.Vector2D, rotation float64) {
-	for _, bullet := range dw.clip {
-		if !bullet.Active {
-			bullet.Position.X = origin.X
-			bullet.Position.Y = origin.Y
-
-			bullet.Rotation = rotation
-
-			sin, cos := math.Sincos(rotation)
-			bullet.Speed.X = cos * BULLET_SPEED
-			bullet.Speed.Y = sin * BULLET_SPEED
-
-			bullet.Active = true
-			break
-		}
+	bullet := dw.clip.Get()
+	if bullet == nil {
+		return
 	}
+
+	bullet.Position.X = origin.X
+	bullet.Position.Y = origin.Y
+
+	bullet.Rotation = rotation
+
+	sin, cos := math.Sincos(rotation)
+	bullet.Speed.X = cos * BULLET_SPEED
+	bullet.Speed.Y = sin * BULLET_SPEED
+
+	bullet.Active = true
 
 	dw.Discharge()
 }

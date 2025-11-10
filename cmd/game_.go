@@ -329,9 +329,7 @@ func buildMaze(mazeNodes [][]MazeNode, walls []Wall) []Wall {
 }
 
 func (g *Game) Reset() {
-	for _, bullet := range g.Bullets {
-		bullet.Active = false
-	}
+	g.Bullets.Reset()
 
 	for _, char := range g.Characters {
 		char.Active = true

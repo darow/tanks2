@@ -67,3 +67,35 @@ func (d *DrawingArea) NewArea(height, width float64, settings DrawingSettings) (
 	d.Children = append(d.Children, newArea)
 	return
 }
+
+type Pool struct {
+	objects []*Bullet
+	next    int
+}
+
+func (pool *Pool) Get() *Bullet {
+	if pool.objects[pool.next].Active {
+		return nil
+	}
+
+	object := pool.objects[pool.next]
+	pool.next = (pool.next + 1) % len(pool.objects)
+	return object
+}
+
+func (pool *Pool) Elements() []*Bullet {
+	return pool.objects
+}
+
+func (pool *Pool) Reset() {
+	for _, object := range pool.objects {
+		object.Active = false
+	}
+}
+
+func CreatePool(bullets []*Bullet) Pool {
+	return Pool{
+		objects: bullets,
+		next:    0,
+	}
+}

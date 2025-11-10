@@ -103,6 +103,8 @@ func main() {
 		}
 	}
 
+	bulletPool := models.CreatePool(bullets)
+
 	characters := []*Character{
 		{
 			GameObject: models.GameObject{
@@ -114,7 +116,7 @@ func main() {
 
 			Hitbox: RectangleHitbox{CHARACTER_WIDTH, CHARACTER_WIDTH},
 			Sprite: ImageSprite{charImage},
-			weapon: &DefaultWeapon{bullets, 5},
+			weapon: &DefaultWeapon{&bulletPool, 5},
 			input: Input{
 				ControlSettings: cs1,
 			},
@@ -129,7 +131,7 @@ func main() {
 
 			Hitbox: RectangleHitbox{CHARACTER_WIDTH, CHARACTER_WIDTH},
 			Sprite: ImageSprite{charImage},
-			weapon: &DefaultWeapon{bullets, 5},
+			weapon: &DefaultWeapon{&bulletPool, 5},
 			input: Input{
 				ControlSettings: cs2,
 			},
@@ -174,7 +176,7 @@ func main() {
 	game := &Game{
 		boardImage:       image,
 		leftAlive:        2,
-		Bullets:          bullets,
+		Bullets:          bulletPool,
 		Characters:       characters,
 		CharactersScores: []uint{0, 0},
 		mainArea:         mainArea,

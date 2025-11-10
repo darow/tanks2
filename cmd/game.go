@@ -37,7 +37,7 @@ type Game struct {
 	leftAlive int
 
 	Maze             [][]MazeNode
-	Bullets          []*models.Bullet
+	Bullets          models.Pool
 	Walls            []Wall
 	Characters       []*Character
 	CharactersScores []uint
@@ -146,9 +146,7 @@ func (g *Game) Update() error {
 		g.DetectCharacterToWallCollision(char)
 	}
 
-	for i := 0; i < len(g.Bullets); i++ {
-		bullet := g.Bullets[i]
-
+	for _, bullet := range g.Bullets.Elements() {
 		if !bullet.Active {
 			continue
 		}
@@ -202,7 +200,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		}
 	}
 
-	for _, bullet := range g.Bullets {
+	for _, bullet := range g.Bullets.Elements() {
 		if bullet.Active {
 			bullet.Draw(mazeArea)
 		}
