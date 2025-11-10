@@ -4,10 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="496c345d-fb3f-4ec8-bba6-93a5706b8e35" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/cmd/connection.go" beforeDir="false" afterPath="$PROJECT_DIR$/cmd/connection.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/readme.md" beforeDir="false" afterPath="$PROJECT_DIR$/readme.md" afterDir="false" />
-    </list>
+    <list default="true" id="496c345d-fb3f-4ec8-bba6-93a5706b8e35" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -19,7 +16,7 @@
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
     "Go Build.go build myebiten/cmd.executor": "Debug",
-    "git-widget-placeholder": "best__branch"
+    "git-widget-placeholder": "master"
   }
 }]]></component>
   <component name="RunManager">
