@@ -81,7 +81,9 @@ func (g *Game) ReceiveMazeUpdates() {
 			log.Println(err)
 		}
 
-		fmt.Printf("Received map message: %s\n", message)
+		if DEBUG_MODE {
+			fmt.Printf("Received map message: %s\n", message)
+		}
 
 		var maze MazeDTO
 		err = json.Unmarshal(message, &maze)

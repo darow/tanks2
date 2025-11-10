@@ -1,3 +1,15 @@
+**quick start:**
+
+host server:
+```shell
+go run ./cmd -mode=server
+```
+
+client:
+```shell
+go run ./cmd -mode=client -address="127.0.0.1:8080"
+```
+
 глобальный план:
 1. сделать соло танки
 2. сделать мультиплеер танки
