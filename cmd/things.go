@@ -4,6 +4,7 @@ import (
 	"math"
 
 	"myebiten/internal/models"
+	"myebiten/internal/weapons"
 
 	"github.com/hajimehoshi/ebiten/v2"
 )
@@ -13,7 +14,6 @@ const (
 	CHARACTER_ROTATION_SPEED = 0.05
 	CHARACTER_SPEED          = 5
 	CHARACTER_WIDTH          = 70
-	BULLET_SPEED             = 6
 	WALL_HEIGHT              = 170
 	WALL_WIDTH               = 10
 )
@@ -31,7 +31,7 @@ type Character struct {
 	Hitbox `json:"-"`
 	Sprite `json:"-"`
 	input  Input
-	weapon Weapon
+	weapon weapons.Weapon
 }
 
 type ControlSettings struct {
@@ -70,8 +70,8 @@ func (c *Character) ProcessInput() {
 		c.input.Shoot = false
 		sin, cos := math.Sincos(c.Rotation)
 		origin := models.Vector2D{
-			X: c.Position.X + cos*(float64(CHARACTER_WIDTH)/2+10),
-			Y: c.Position.Y + sin*(float64(CHARACTER_WIDTH)/2+10),
+			X: c.Position.X + cos*(float64(CHARACTER_WIDTH)/2+BULLET_RADIUS),
+			Y: c.Position.Y + sin*(float64(CHARACTER_WIDTH)/2+BULLET_RADIUS),
 		}
 
 		c.weapon.Shoot(origin, c.Rotation)

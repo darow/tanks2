@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"runtime"
 
@@ -82,7 +81,7 @@ func (g *Game) ReceiveMazeUpdates() {
 		}
 
 		if DEBUG_MODE {
-			fmt.Printf("Received map message: %s\n", message)
+			log.Printf("Received map message: %s\n", message)
 		}
 
 		var maze MazeDTO

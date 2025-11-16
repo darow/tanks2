@@ -1,7 +1,6 @@
 package server
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"runtime"
@@ -62,7 +61,7 @@ func New() *Server {
 	})
 
 	go func() {
-		fmt.Println("Server is listening on port 8080")
+		log.Println("Server is listening on port 8080")
 		log.Fatal(http.ListenAndServe(":8080", nil))
 	}()
 
@@ -74,7 +73,7 @@ func New() *Server {
 	}
 
 	go s.ReceiveUpdates()
-	fmt.Println("client connected")
+	log.Println("client connected")
 
 	return s
 }
@@ -87,8 +86,6 @@ func (s *Server) ReceiveUpdates() {
 			log.Println(err)
 			log.Fatal()
 		}
-
-		// fmt.Printf("Received message: %s\n", message)
 
 		s.msgStore.Lock()
 		s.msgStore.message = message

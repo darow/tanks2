@@ -3,12 +3,15 @@ package main
 import (
 	"bytes"
 	"flag"
+	"fmt"
 	"image"
 	_ "image/png"
 	"log"
+	"os"
 	"syscall"
 
 	"myebiten/internal/models"
+	"myebiten/internal/weapons"
 	images "myebiten/resources"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -24,7 +27,8 @@ const (
 )
 
 var (
-	REGULAR_FONT font.Face
+	REGULAR_FONT              font.Face
+	CHARACTER_IMAGE_TO_RESIZE image.Image
 
 	SCREEN_SIZE_WIDTH  = 2560
 	SCREEN_SIZE_HEIGHT = 1420
@@ -34,11 +38,6 @@ var (
 
 	MIN_BOARD_HEIGHT = 3
 	MIN_BOARD_WIDTH  = 3
-
-	DRAWING_OFFSET = models.Vector2D{X: 300, Y: 50}
-	DRAWING_SCALE  = 1.0
-
-	CHARACTER_IMAGE_TO_RESIZE image.Image
 
 	CONNECTION_MODE  = flag.String("mode", "offline", "offline / server / client")
 	SERVER_MODE_PORT = flag.String("server_mode_port", "8080", "IF TRUE THEN GAME IS IN HOST MODE AND WAITING FOR CONNECTION OF OTHER PLAYER")
@@ -51,12 +50,25 @@ func main() {
 	flag.Parse()
 
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
+	outputFileName := fmt.Sprintf("%s.txt", *CONNECTION_MODE)
+	f, err := os.Create(outputFileName)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer f.Close()
+	log.SetOutput(f)
+
+	defer func() {
+		if r := recover(); r != nil {
+			log.Fatal("Recovered from panic: ", r)
+		}
+	}()
+
 	setScreenSizeParams()
 
 	ebiten.SetWindowSize(SCREEN_SIZE_WIDTH, SCREEN_SIZE_HEIGHT)
 	ebiten.SetWindowTitle("tanks in maze")
 
-	var err error
 	tt, err := opentype.Parse(fonts.MPlus1pRegular_ttf)
 	if err != nil {
 		log.Fatal(err)
@@ -95,13 +107,15 @@ func main() {
 		shootButton:        ebiten.KeySlash,
 	}
 
-	bullets := make([]*models.Bullet, 20)
-
+	bullets := make([]*models.Bullet, weapons.BULLETS_COUNT*2)
 	for i := range bullets {
 		bullets[i] = &models.Bullet{
 			R: float64(BULLET_RADIUS),
 		}
 	}
+
+	bullets1 := bullets[:weapons.BULLETS_COUNT]
+	bullets2 := bullets[weapons.BULLETS_COUNT:]
 
 	characters := []*Character{
 		{
@@ -114,7 +128,7 @@ func main() {
 
 			Hitbox: RectangleHitbox{CHARACTER_WIDTH, CHARACTER_WIDTH},
 			Sprite: ImageSprite{charImage},
-			weapon: &DefaultWeapon{bullets, 5},
+			weapon: &weapons.DefaultWeapon{bullets1, 5},
 			input: Input{
 				ControlSettings: cs1,
 			},
@@ -129,17 +143,17 @@ func main() {
 
 			Hitbox: RectangleHitbox{CHARACTER_WIDTH, CHARACTER_WIDTH},
 			Sprite: ImageSprite{charImage},
-			weapon: &DefaultWeapon{bullets, 5},
+			weapon: &weapons.DefaultWeapon{bullets2, 5},
 			input: Input{
 				ControlSettings: cs2,
 			},
 		},
 	}
 
-	image := ebiten.NewImage(SCREEN_SIZE_WIDTH, SCREEN_SIZE_HEIGHT)
+	ebitenImage := ebiten.NewImage(SCREEN_SIZE_WIDTH, SCREEN_SIZE_HEIGHT)
 
 	mainArea := &models.DrawingArea{
-		BoardImage: image,
+		BoardImage: ebitenImage,
 		DrawingSettings: models.DrawingSettings{
 			Offset: models.Vector2D{X: 0.0, Y: float64(SCREEN_SIZE_HEIGHT) / 10},
 			Scale:  1.0,
@@ -149,7 +163,7 @@ func main() {
 	}
 
 	UIArea1 := &models.DrawingArea{
-		BoardImage: image,
+		BoardImage: ebitenImage,
 		DrawingSettings: models.DrawingSettings{
 			Offset: models.Vector2D{X: 0.0, Y: 0.0},
 			Scale:  1.0,
@@ -159,7 +173,7 @@ func main() {
 	}
 
 	UIArea2 := &models.DrawingArea{
-		BoardImage: image,
+		BoardImage: ebitenImage,
 		DrawingSettings: models.DrawingSettings{
 			Offset: models.Vector2D{X: 0.0, Y: float64(SCREEN_SIZE_HEIGHT) * 0.9},
 			Scale:  1.0,
@@ -172,7 +186,7 @@ func main() {
 	UIArea2.NewArea(0.99*UIArea2.Height, 0.2*UIArea2.Width, models.DrawingSettings{Offset: models.Vector2D{X: 0.6 * UIArea2.Width, Y: 0.5 * UIArea2.Height}, Scale: 1.0})
 
 	game := &Game{
-		boardImage:       image,
+		boardImage:       ebitenImage,
 		leftAlive:        2,
 		Bullets:          bullets,
 		Characters:       characters,
@@ -191,7 +205,7 @@ func main() {
 		//	game.Characters[1].input.ControlSettings = ControlSettings{}
 		//}
 	}
-	// ebiten.SetFullscreen(true)
+	ebiten.SetFullscreen(true)
 
 	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)

@@ -59,8 +59,6 @@ func (c *Client) ReceiveUpdates() {
 			log.Println(err)
 		}
 
-		// fmt.Printf("Received message: %s\n", message)
-
 		c.msgStore.Lock()
 		c.msgStore.message = message
 		c.msgStore.Unlock()

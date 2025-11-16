@@ -164,7 +164,6 @@ func getInitialMaze(N, M int) ([][]MazeNode, Coordinates) {
 	for _, coord := range coords {
 		for {
 			nextCoord, ok := next(coord, root, N, M)
-			// fmt.Printf("%d %d\n", nextCoord.i, nextCoord.j)
 			if !ok {
 				break
 			}

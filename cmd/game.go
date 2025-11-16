@@ -188,6 +188,10 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	g.boardImage.Clear()
 	g.boardImage.Fill(COLOR_BACKGROUND)
 
+	if len(g.mainArea.Children) == 0 {
+		log.Print("No maze area to draw")
+		return
+	}
 	mazeArea := g.mainArea.Children[0]
 
 	for _, wall := range g.Walls {

@@ -2,7 +2,6 @@ package main
 
 import (
 	"image/color"
-	"math"
 
 	"myebiten/internal/models"
 
@@ -79,38 +78,4 @@ func (imageSprite ImageSprite) Draw(drawingArea *models.DrawingArea, gameObject 
 	image := drawingArea.BoardImage
 
 	image.DrawImage(imageSprite.Image, op)
-}
-
-type Weapon interface {
-	Shoot(origin models.Vector2D, rotation float64)
-	Discharge()
-}
-
-type DefaultWeapon struct {
-	clip     []*models.Bullet
-	cooldown int
-}
-
-func (dw *DefaultWeapon) Shoot(origin models.Vector2D, rotation float64) {
-	for _, bullet := range dw.clip {
-		if !bullet.Active {
-			bullet.Position.X = origin.X
-			bullet.Position.Y = origin.Y
-
-			bullet.Rotation = rotation
-
-			sin, cos := math.Sincos(rotation)
-			bullet.Speed.X = cos * BULLET_SPEED
-			bullet.Speed.Y = sin * BULLET_SPEED
-
-			bullet.Active = true
-			break
-		}
-	}
-
-	dw.Discharge()
-}
-
-func (dw *DefaultWeapon) Discharge() {
-
 }
