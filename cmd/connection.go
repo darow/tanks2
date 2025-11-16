@@ -25,7 +25,7 @@ type MazeDTO struct {
 func (g *Game) makeSuccessConnection() {
 	switch *CONNECTION_MODE {
 	case CONNECTION_MODE_SERVER:
-		g.server = server.New()
+		g.server = server.New(*SERVER_MODE_PORT)
 	case CONNECTION_MODE_CLIENT:
 		g.client = client.New(*ADDRESS)
 		go g.ReceiveMazeUpdates()
@@ -80,7 +80,7 @@ func (g *Game) ReceiveMazeUpdates() {
 			log.Println(err)
 		}
 
-		if DEBUG_MODE {
+		if *DEBUG_MODE {
 			log.Printf("Received map message: %s\n", message)
 		}
 

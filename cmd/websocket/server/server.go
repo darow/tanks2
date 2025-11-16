@@ -25,7 +25,7 @@ var upgrader = websocket.Upgrader{
 	WriteBufferSize: 1024,
 }
 
-func New() *Server {
+func New(port string) *Server {
 	ch1 := make(chan *websocket.Conn)
 	ch2 := make(chan *websocket.Conn)
 	ch3 := make(chan *websocket.Conn)
@@ -62,7 +62,8 @@ func New() *Server {
 
 	go func() {
 		log.Println("Server is listening on port 8080")
-		log.Fatal(http.ListenAndServe(":8080", nil))
+		addr := ":" + port
+		log.Fatal(http.ListenAndServe(addr, nil))
 	}()
 
 	s := &Server{

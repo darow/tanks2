@@ -21,11 +21,6 @@ import (
 	"golang.org/x/image/font/opentype"
 )
 
-const (
-	DEBUG_MODE               = false
-	FEATURE_DECREASING_TANKS = false
-)
-
 var (
 	REGULAR_FONT              font.Face
 	CHARACTER_IMAGE_TO_RESIZE image.Image
@@ -38,6 +33,8 @@ var (
 
 	MIN_BOARD_HEIGHT = 3
 	MIN_BOARD_WIDTH  = 3
+
+	DEBUG_MODE = flag.Bool("debug", true, "true / false")
 
 	CONNECTION_MODE  = flag.String("mode", "offline", "offline / server / client")
 	SERVER_MODE_PORT = flag.String("server_mode_port", "8080", "IF TRUE THEN GAME IS IN HOST MODE AND WAITING FOR CONNECTION OF OTHER PLAYER")
