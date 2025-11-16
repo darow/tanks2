@@ -1,6 +1,9 @@
 target:
 	make run -j2
 
+local:
+	go run ./cmd
+
 run: run_server run_client
 
 run_server:
