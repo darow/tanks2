@@ -125,7 +125,7 @@ func main() {
 
 			Hitbox: RectangleHitbox{CHARACTER_WIDTH, CHARACTER_WIDTH},
 			Sprite: ImageSprite{charImage},
-			weapon: &weapons.DefaultWeapon{bullets1, 5},
+			weapon: &weapons.DefaultWeapon{Clip: bullets1, Cooldown: 5},
 			input: Input{
 				ControlSettings: cs1,
 			},
@@ -140,7 +140,7 @@ func main() {
 
 			Hitbox: RectangleHitbox{CHARACTER_WIDTH, CHARACTER_WIDTH},
 			Sprite: ImageSprite{charImage},
-			weapon: &weapons.DefaultWeapon{bullets2, 5},
+			weapon: &weapons.DefaultWeapon{Clip: bullets2, Cooldown: 5},
 			input: Input{
 				ControlSettings: cs2,
 			},
