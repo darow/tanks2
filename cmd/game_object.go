@@ -87,7 +87,7 @@ type Weapon interface {
 }
 
 type DefaultWeapon struct {
-	clip     *models.Pool
+	clip     *models.Pool[*models.Bullet]
 	cooldown int
 }
 

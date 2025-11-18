@@ -37,7 +37,7 @@ type Game struct {
 	leftAlive int
 
 	Maze             [][]MazeNode
-	Bullets          models.Pool
+	Bullets          models.Pool[*models.Bullet]
 	Walls            []Wall
 	Characters       []*Character
 	CharactersScores []uint
