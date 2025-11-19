@@ -365,10 +365,17 @@ func (g *Game) Reset() {
 		char.Input.Reset()
 	}
 
+	g.activeScene.Objects = g.activeScene.Objects[:2] //len(g.activeScene.Objects)-len(g.Walls)]
 	mainArea := g.activeScene.GetArea(MAIN_PLAYING_AREA_ID)
 	mainArea.Children = nil
 }
 
 func (g *Game) SpawnItem() {
 
+}
+
+func (g *Game) SanityCheck() {
+	if len(g.activeScene.Objects) != len(g.Bullets)+len(g.Characters)+len(g.Walls)+2 {
+		log.Print("discrepancy between the expected number of objects on the scene and actual number")
+	}
 }

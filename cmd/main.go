@@ -12,6 +12,7 @@ import (
 
 	"myebiten/internal/game"
 	"myebiten/internal/models"
+	"myebiten/internal/weapons"
 	images "myebiten/resources"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -76,7 +77,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	bullets := make([]*models.Bullet, models.BULLETS_COUNT*NUMBER_OF_CHARACTERS)
+	bullets := make([]*models.Bullet, weapons.BULLETS_COUNT*NUMBER_OF_CHARACTERS)
 	for i := range bullets {
 		bullets[i] = models.CreateBullet(models.BULLET_RADIUS)
 	}
@@ -177,8 +178,8 @@ func createCharacters(bullets []*models.Bullet) []*models.Character {
 		ShootButton:        ebiten.KeySpace,
 	}
 
-	defaultWeapon := models.DefaultWeapon{
-		Clip:     bullets[:models.BULLETS_COUNT],
+	defaultWeapon := weapons.DefaultWeapon{
+		Clip:     bullets[:weapons.BULLETS_COUNT],
 		Cooldown: 5,
 	}
 
@@ -193,8 +194,8 @@ func createCharacters(bullets []*models.Bullet) []*models.Character {
 		ShootButton:        ebiten.KeySlash,
 	}
 
-	defaultWeapon = models.DefaultWeapon{
-		Clip:     bullets[models.BULLETS_COUNT:],
+	defaultWeapon = weapons.DefaultWeapon{
+		Clip:     bullets[weapons.BULLETS_COUNT:],
 		Cooldown: 5,
 	}
 

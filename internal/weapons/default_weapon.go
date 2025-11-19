@@ -1,7 +1,8 @@
-package models
+package weapons
 
 import (
 	"math"
+	"myebiten/internal/models"
 	"time"
 )
 
@@ -10,17 +11,12 @@ const (
 	BULLETS_COUNT = 5
 )
 
-type Weapon interface {
-	Shoot(origin Vector2D, rotation float64)
-	Discharge()
-}
-
 type DefaultWeapon struct {
-	Clip     []*Bullet
+	Clip     []*models.Bullet
 	Cooldown int64
 }
 
-func (dw *DefaultWeapon) Shoot(origin Vector2D, rotation float64) {
+func (dw *DefaultWeapon) Shoot(origin models.Vector2D, rotation float64) {
 	for _, bullet := range dw.Clip {
 		if !bullet.IsActive() {
 			bullet.Position.X = origin.X

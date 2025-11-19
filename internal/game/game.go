@@ -91,6 +91,8 @@ func (g *Game) Update() error {
 		g.leftAlive = 2
 		g.state = STATE_GAME_RUNNING
 
+		g.SanityCheck()
+
 	case STATE_GAME_RUNNING:
 		select {
 		case <-g.itemSpawnTicker.C:

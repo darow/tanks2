@@ -12,6 +12,11 @@ const (
 	CHARACTER_WIDTH          = 70
 )
 
+type Weapon interface {
+	Shoot(origin Vector2D, rotation float64)
+	Discharge()
+}
+
 type Character struct {
 	GameObject
 	hitbox RectangleHitbox

@@ -50,7 +50,7 @@ func (d *DrawingArea) NewArea(height, width float64, settings DrawingSettings) (
 }
 
 type Scene struct {
-	objects  []Drawable
+	Objects  []Drawable
 	rootArea *DrawingArea
 	areaIDs  map[Drawable]string
 	areas    map[string]*DrawingArea
@@ -61,7 +61,7 @@ func (scene *Scene) Draw() *ebiten.Image {
 	boardImage.Clear()
 	boardImage.Fill(COLOR_BACKGROUND)
 
-	for _, object := range scene.objects {
+	for _, object := range scene.Objects {
 		if object.IsActive() {
 			areaID := scene.areaIDs[object]
 			area := scene.areas[areaID]
@@ -73,7 +73,7 @@ func (scene *Scene) Draw() *ebiten.Image {
 }
 
 func (scene *Scene) AddObject(object Drawable, areaID string) {
-	scene.objects = append(scene.objects, object)
+	scene.Objects = append(scene.Objects, object)
 	scene.areaIDs[object] = areaID
 }
 
