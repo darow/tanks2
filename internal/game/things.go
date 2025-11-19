@@ -1,114 +1,30 @@
-package main
+package game
 
 import (
 	"math"
 
 	"myebiten/internal/models"
-	"myebiten/internal/weapons"
-
-	"github.com/hajimehoshi/ebiten/v2"
 )
 
 const (
-	BULLET_RADIUS            = 4
-	CHARACTER_ROTATION_SPEED = 0.05
-	CHARACTER_SPEED          = 5
-	CHARACTER_WIDTH          = 70
-	WALL_HEIGHT              = 170
-	WALL_WIDTH               = 10
+	ROOT_AREA_ID         = "root_area"
+	MAIN_PLAYING_AREA_ID = "main_playing_area"
+	MAZE_AREA_ID         = "maze_area"
+	UI_AREA1_ID          = "ui_area_1"
+	SCORE_AREA_ID        = "score_area"
+	SCORE_AREA_1_ID      = "score_area_1"
+	SCORE_AREA_2_ID      = "score_area_2"
+	SCORE_AREA_3_ID      = "score_area_3"
+	SCORE_AREA_4_ID      = "score_area_4"
+)
+
+const (
+	MAIN_SCENE_ID = 1
 )
 
 var TILE_ID_SEQUENCE = 0
 
-type Wall struct {
-	models.GameObject
-	Hitbox `json:"-"`
-	Sprite `json:"-"`
-}
-
-type Character struct {
-	models.GameObject
-	Hitbox `json:"-"`
-	Sprite `json:"-"`
-	input  Input
-	weapon weapons.Weapon
-}
-
-type ControlSettings struct {
-	rotateRightButton  ebiten.Key
-	rotateLeftButton   ebiten.Key
-	moveForwardButton  ebiten.Key
-	moveBackwardButton ebiten.Key
-	shootButton        ebiten.Key
-}
-
-func (c *Character) ProcessInput() {
-	c.Speed.X = 0.0
-	c.Speed.Y = 0.0
-
-	if c.input.RotateRight {
-		c.Rotation += CHARACTER_ROTATION_SPEED
-	}
-
-	if c.input.RotateLeft {
-		c.Rotation -= CHARACTER_ROTATION_SPEED
-	}
-
-	if c.input.MoveForward {
-		sin, cos := math.Sincos(c.Rotation)
-		c.Speed.X = cos * CHARACTER_SPEED
-		c.Speed.Y = sin * CHARACTER_SPEED
-	}
-
-	if c.input.MoveBackward {
-		sin, cos := math.Sincos(c.Rotation)
-		c.Speed.X = -cos * CHARACTER_SPEED * 5 / 6
-		c.Speed.Y = -sin * CHARACTER_SPEED * 5 / 6
-	}
-
-	if c.input.Shoot {
-		c.input.Shoot = false
-		sin, cos := math.Sincos(c.Rotation)
-		origin := models.Vector2D{
-			X: c.Position.X + cos*(float64(CHARACTER_WIDTH)/2+BULLET_RADIUS),
-			Y: c.Position.Y + sin*(float64(CHARACTER_WIDTH)/2+BULLET_RADIUS),
-		}
-
-		c.weapon.Shoot(origin, c.Rotation)
-	}
-
-}
-
-func (c *Character) getCorners() []models.Vector2D {
-	// Получаем точки углов персонажа (с учётом поворота)
-	hw := float64(CHARACTER_WIDTH) / 2
-	hh := float64(CHARACTER_WIDTH) / 2
-
-	return []models.Vector2D{
-		RotatePoint(c.Position.X-hw, c.Position.Y-hh, c.Position.X, c.Position.Y, c.Rotation),
-		RotatePoint(c.Position.X+hw, c.Position.Y-hh, c.Position.X, c.Position.Y, c.Rotation),
-		RotatePoint(c.Position.X+hw, c.Position.Y+hh, c.Position.X, c.Position.Y, c.Rotation),
-		RotatePoint(c.Position.X-hw, c.Position.Y+hh, c.Position.X, c.Position.Y, c.Rotation),
-	}
-}
-
-func (w *Wall) GetCorners() []models.Vector2D {
-	var height, width float64 = WALL_HEIGHT, WALL_WIDTH
-	if w.Rotation == 0.0 {
-		height, width = width, height
-	}
-
-	corners := []models.Vector2D{
-		{X: w.Position.X - width/2, Y: w.Position.Y - height/2},
-		{X: w.Position.X + width/2, Y: w.Position.Y - height/2},
-		{X: w.Position.X - width/2, Y: w.Position.Y + height/2},
-		{X: w.Position.X + width/2, Y: w.Position.Y + height/2},
-	}
-
-	return corners
-}
-
-func (g *Game) getClosestWalls(c *Character) []*Wall {
+func (g *Game) getClosestWalls(c *models.Character) []*models.Wall {
 	// yes, this is shit, I see it too, dw it will all change
 	i, j := getMazeCoordinates(c.Position)
 	k := 0
@@ -168,10 +84,10 @@ func (g *Game) getClosestWalls(c *Character) []*Wall {
 	return wallsToCheck[:k]
 }
 
-func (g *Game) DetectCharacterToWallCollision(c *Character) {
+func (g *Game) DetectCharacterToWallCollision(c *models.Character) {
 	closestWalls := g.getClosestWalls(c)
 	for _, w := range closestWalls {
-		isCollide := c.detectWallCollision(*w)
+		isCollide := c.DetectWallCollision(*w)
 		if isCollide {
 			c.MoveBack()
 		}
@@ -275,42 +191,6 @@ func (g *Game) DetectBulletToWallCollision(b *models.Bullet) {
 	}
 }
 
-func (g *Game) DetectBulletToCharacterCollision(b *models.Bullet, c *Character) (isCollision bool) {
-	// Сдвигаем снаряд в локальную систему координат прямоугольника
-	dx := b.Position.X - c.Position.X
-	dy := b.Position.Y - c.Position.Y
-
-	sin, cos := math.Sincos(c.Rotation)
-
-	xLocal := dx*cos + dy*sin
-	yLocal := -dx*sin + dy*cos
-
-	// Находим ближайшую точку на прямоугольнике
-	halfW := float64(CHARACTER_WIDTH) / 2
-	halfH := float64(CHARACTER_WIDTH) / 2
-
-	closestX := math.Max(-halfW, math.Min(xLocal, halfW))
-	closestY := math.Max(-halfH, math.Min(yLocal, halfH))
-
-	// Вычисляем расстояние от снаряда до ближайшей точки
-	dxLocal := xLocal - closestX
-	dyLocal := yLocal - closestY
-	distanceSq := dxLocal*dxLocal + dyLocal*dyLocal
-
-	// Сравниваем в квадратах, чтоб не вычислять корень из distanceSq
-	return distanceSq <= BULLET_RADIUS*BULLET_RADIUS
-}
-
-func (c *Character) Copy(c2 *Character) {
-	if c2 == nil {
-		c.Position.X = 99999
-		c.Position.Y = 99999
-		return
-	}
-
-	c.Position.X = c2.Position.X
-	c.Position.Y = c2.Position.Y
-	c.Rotation = c2.Rotation
-
-	c.Active = c2.Active
+func (g *Game) SetActiveScene(sceneID int) {
+	g.activeScene = g.scenes[sceneID]
 }

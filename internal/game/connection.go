@@ -1,17 +1,16 @@
-package main
+package game
 
 import (
 	"encoding/json"
 	"log"
 	"runtime"
 
-	"myebiten/cmd/websocket/client"
-	"myebiten/cmd/websocket/server"
-
-	"github.com/gorilla/websocket"
+	"myebiten/internal/models"
+	"myebiten/internal/websocket/client"
+	"myebiten/internal/websocket/server"
 )
 
-const (
+var (
 	CONNECTION_MODE_OFFLINE = "offline"
 	CONNECTION_MODE_SERVER  = "server"
 	CONNECTION_MODE_CLIENT  = "client"
@@ -19,19 +18,19 @@ const (
 
 type MazeDTO struct {
 	H, W  int
-	Walls []Wall
+	Walls []models.Wall
 }
 
-func (g *Game) makeSuccessConnection() {
-	switch *CONNECTION_MODE {
+func (g *Game) MakeSuccessConnection(connectionMode, serverPort, address string) {
+	switch connectionMode {
 	case CONNECTION_MODE_SERVER:
-		g.server = server.New(*SERVER_MODE_PORT)
+		g.server = server.New(serverPort)
 	case CONNECTION_MODE_CLIENT:
-		g.client = client.New(*ADDRESS)
+		g.client = client.New(address)
 		go g.ReceiveMazeUpdates()
 	default:
 	}
-	SUCCESS_CONNECTION = true
+	g.connMode = connectionMode
 }
 
 func (g *Game) UpdateGameFromServer() {
@@ -60,17 +59,17 @@ func (g *Game) UpdateGameFromServer() {
 	g.Bullets = newGame.Bullets
 }
 
-func (c *Character) SendInputToServer(ws *websocket.Conn) {
-	msg, err := json.Marshal(c.input)
-	if err != nil {
-		log.Fatal(err)
-	}
+// func (c *Character) SendInputToServer(ws *websocket.Conn) {
+// 	msg, err := json.Marshal(c.input)
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
 
-	err = ws.WriteMessage(websocket.TextMessage, msg)
-	if err != nil {
-		log.Fatal(err)
-	}
-}
+// 	err = ws.WriteMessage(websocket.TextMessage, msg)
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+// }
 
 func (g *Game) ReceiveMazeUpdates() {
 	for {
@@ -80,9 +79,9 @@ func (g *Game) ReceiveMazeUpdates() {
 			log.Println(err)
 		}
 
-		if *DEBUG_MODE {
-			log.Printf("Received map message: %s\n", message)
-		}
+		// if *DEBUG_MODE {
+		// 	log.Printf("Received map message: %s\n", message)
+		// }
 
 		var maze MazeDTO
 		err = json.Unmarshal(message, &maze)
@@ -93,8 +92,8 @@ func (g *Game) ReceiveMazeUpdates() {
 		g.Walls = maze.Walls
 
 		for i := range g.Walls {
-			g.Walls[i].Hitbox = RectangleHitbox{WALL_WIDTH, WALL_HEIGHT}
-			g.Walls[i].Sprite = RectangleSprite{WALL_WIDTH, WALL_HEIGHT}
+			g.Walls[i].Hitbox = models.RectangleHitbox{W: WALL_WIDTH, H: WALL_HEIGHT}
+			g.Walls[i].Sprite = models.RectangleSprite{W: WALL_WIDTH, H: WALL_HEIGHT}
 		}
 
 		g.Reset()
@@ -102,7 +101,7 @@ func (g *Game) ReceiveMazeUpdates() {
 	}
 }
 
-func (g *Game) SendMazeToClient(h, w int, walls []Wall) {
+func (g *Game) SendMazeToClient(h, w int, walls []models.Wall) {
 	maze := MazeDTO{h, w, walls}
 
 	msg, err := json.Marshal(maze)

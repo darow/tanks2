@@ -1,4 +1,4 @@
-package main
+package game
 
 type Generator struct {
 	sources func(int, int) []Coordinates

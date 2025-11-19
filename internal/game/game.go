@@ -1,19 +1,17 @@
-package main
+package game
 
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"image/color"
 	"log"
 	"time"
 
-	"myebiten/cmd/websocket/client"
-	"myebiten/cmd/websocket/server"
 	"myebiten/internal/models"
+	"myebiten/internal/websocket/client"
+	"myebiten/internal/websocket/server"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/text"
 )
 
 const (
@@ -27,7 +25,10 @@ const (
 	STATE_GAME_ENDING
 )
 
-var wallsToCheck []*Wall = make([]*Wall, 12)
+var wallsToCheck []*models.Wall = make([]*models.Wall, 12)
+var (
+	COLOR_BLACK = color.RGBA{0x0f, 0x0f, 0x0f, 0xff}
+)
 
 type Game struct {
 	stateEndingTimer *time.Timer
@@ -38,17 +39,16 @@ type Game struct {
 
 	Maze             [][]MazeNode
 	Bullets          []*models.Bullet
-	Walls            []Wall
-	Characters       []*Character
+	Walls            []models.Wall
+	Characters       []*models.Character
 	CharactersScores []uint
 
-	mainArea *models.DrawingArea
-	UIArea1  *models.DrawingArea
-	UIArea2  *models.DrawingArea
+	server   *server.Server
+	client   *client.Client
+	connMode string
 
-	server     *server.Server
-	client     *client.Client
-	boardImage *ebiten.Image
+	scenes      map[int]*models.Scene
+	activeScene *models.Scene
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
@@ -56,12 +56,12 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 }
 
 func (g *Game) Update() error {
-	if *CONNECTION_MODE == CONNECTION_MODE_CLIENT {
+	if g.connMode == CONNECTION_MODE_CLIENT {
 		char := g.Characters[0]
 
-		char.input.Update()
+		char.Input.Update()
 
-		msg, err := json.Marshal(char.input)
+		msg, err := json.Marshal(char.Input)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -71,8 +71,8 @@ func (g *Game) Update() error {
 			log.Fatal(err)
 		}
 
-		if char.input.Shoot {
-			char.input.Shoot = false
+		if char.Input.Shoot {
+			char.Input.Shoot = false
 		}
 
 		g.UpdateGameFromServer()
@@ -85,7 +85,7 @@ func (g *Game) Update() error {
 		g.Reset()
 		g.itemSpawnTicker = time.NewTicker(ITEM_SPAWN_INTERVAL * time.Second)
 		h, w, walls := g.SetupLevel()
-		if *CONNECTION_MODE != CONNECTION_MODE_OFFLINE {
+		if g.connMode != CONNECTION_MODE_OFFLINE {
 			g.SendMazeToClient(h, w, walls)
 		}
 		g.leftAlive = 2
@@ -106,7 +106,7 @@ func (g *Game) Update() error {
 		select {
 		case <-g.stateEndingTimer.C:
 			for _, char := range g.Characters {
-				if char.Active {
+				if char.IsActive() {
 					g.CharactersScores[char.ID]++
 					break
 				}
@@ -120,23 +120,23 @@ func (g *Game) Update() error {
 	}
 
 	for i, char := range g.Characters {
-		if !char.Active {
+		if !char.IsActive() {
 			continue
 		}
 
-		if i == 1 && *CONNECTION_MODE == CONNECTION_MODE_SERVER {
+		if i == 1 && g.connMode == CONNECTION_MODE_SERVER {
 			// process client's character's input
 			msg := g.server.ReadMessage()
 
-			var input Input
+			var input models.Input
 			err := json.Unmarshal(msg, &input)
 			if err != nil {
 				continue
 			}
 
-			char.input = input
+			char.Input = input
 		} else {
-			char.input.Update()
+			char.Input.Update()
 		}
 
 		char.ProcessInput()
@@ -146,10 +146,8 @@ func (g *Game) Update() error {
 		g.DetectCharacterToWallCollision(char)
 	}
 
-	for i := 0; i < len(g.Bullets); i++ {
-		bullet := g.Bullets[i]
-
-		if !bullet.Active {
+	for _, bullet := range g.Bullets {
+		if !bullet.IsActive() {
 			continue
 		}
 
@@ -158,19 +156,19 @@ func (g *Game) Update() error {
 		g.DetectBulletToWallCollision(bullet)
 
 		for _, char := range g.Characters {
-			if !char.Active {
+			if !char.IsActive() {
 				continue
 			}
 
-			if g.DetectBulletToCharacterCollision(bullet, char) {
-				bullet.Active = false
-				char.Active = false
+			if char.DetectBulletToCharacterCollision(bullet) {
+				bullet.SetActive(false)
+				char.SetActive(false)
 				g.leftAlive--
 			}
 		}
 	}
 
-	if *CONNECTION_MODE == CONNECTION_MODE_SERVER {
+	if g.connMode == CONNECTION_MODE_SERVER {
 		msg, err := json.Marshal(g)
 		if err != nil {
 			log.Fatal(err)
@@ -185,41 +183,17 @@ func (g *Game) Update() error {
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-	g.boardImage.Clear()
-	g.boardImage.Fill(COLOR_BACKGROUND)
-
-	if len(g.mainArea.Children) == 0 {
-		log.Print("No maze area to draw")
-		return
-	}
-	mazeArea := g.mainArea.Children[0]
-
-	for _, wall := range g.Walls {
-		if wall.Active {
-			wall.Draw(mazeArea, wall.GameObject)
-		}
-	}
-
-	for _, character := range g.Characters {
-		if character.Active {
-			character.Draw(mazeArea, character.GameObject)
-		}
-	}
-
-	for _, bullet := range g.Bullets {
-		if bullet.Active {
-			bullet.Draw(mazeArea)
-		}
-	}
-
-	for i, score := range g.CharactersScores {
-		DrawScore(g.UIArea2.Children[i], fmt.Sprintf("Player %d", i+1), score)
-	}
+	image := g.activeScene.Draw()
 
 	screen.Clear()
-	screen.DrawImage(g.boardImage, &ebiten.DrawImageOptions{})
+	screen.DrawImage(image, &ebiten.DrawImageOptions{})
 }
 
-func DrawScore(drawingArea *models.DrawingArea, name string, score uint) {
-	text.Draw(drawingArea.BoardImage, fmt.Sprintf("%s: %d", name, score), REGULAR_FONT, int(drawingArea.Offset.X), int(drawingArea.Offset.Y), color.Black)
+func CreateGame(bullets []*models.Bullet, characters []*models.Character, scenes map[int]*models.Scene) *Game {
+	return &Game{
+		Bullets:          bullets,
+		Characters:       characters,
+		CharactersScores: []uint{0, 0, 0, 0},
+		scenes:           scenes,
+	}
 }
