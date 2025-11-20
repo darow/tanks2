@@ -47,16 +47,10 @@ func (g *Game) UpdateGameFromServer() {
 		return
 	}
 
+	g.Characters = copyCharacters(g.Characters, newGame.Characters)
+	g.Bullets = copyBullets(g.Bullets, newGame.Bullets)
+
 	g.CharactersScores = newGame.CharactersScores
-
-	if len(g.Characters) == 0 {
-		g.Characters = append(g.Characters, newGame.Characters...)
-	} else {
-		g.Characters[0].Copy(newGame.Characters[0])
-		g.Characters[1].Copy(newGame.Characters[1])
-	}
-
-	g.Bullets = newGame.Bullets
 }
 
 // func (c *Character) SendInputToServer(ws *websocket.Conn) {
@@ -70,6 +64,47 @@ func (g *Game) UpdateGameFromServer() {
 // 		log.Fatal(err)
 // 	}
 // }
+
+func copyCharacters(dst []*models.Character, src []*models.Character) []*models.Character {
+	if len(dst) == 0 {
+		dst = append(dst, src...)
+	} else {
+		for i, char := range src {
+			c := dst[i]
+			if char == nil {
+				c.Position.X = 99999
+				c.Position.Y = 99999
+				continue
+			}
+
+			c.Position.X = char.Position.X
+			c.Position.Y = char.Position.Y
+			c.Rotation = char.Rotation
+
+			c.SetActive(char.IsActive())
+		}
+	}
+
+	return dst
+}
+
+func copyBullets(dst []*models.Bullet, src []*models.Bullet) []*models.Bullet {
+	if len(dst) == 0 {
+		dst = append(dst, src...)
+	} else {
+		for i, b := range src {
+			bullet := dst[i]
+
+			bullet.Position.X = b.Position.X
+			bullet.Position.Y = b.Position.Y
+			bullet.Rotation = b.Rotation
+
+			bullet.SetActive(b.IsActive())
+		}
+	}
+
+	return dst
+}
 
 func (g *Game) ReceiveMazeUpdates() {
 	for {

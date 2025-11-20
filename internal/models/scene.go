@@ -52,8 +52,8 @@ func (d *DrawingArea) NewArea(height, width float64, settings DrawingSettings) (
 type Scene struct {
 	Objects  []Drawable
 	rootArea *DrawingArea
-	areaIDs  map[Drawable]string
-	areas    map[string]*DrawingArea
+	AreaIDs  map[Drawable]string
+	Areas    map[string]*DrawingArea
 }
 
 func (scene *Scene) Draw() *ebiten.Image {
@@ -63,8 +63,8 @@ func (scene *Scene) Draw() *ebiten.Image {
 
 	for _, object := range scene.Objects {
 		if object.IsActive() {
-			areaID := scene.areaIDs[object]
-			area := scene.areas[areaID]
+			areaID := scene.AreaIDs[object]
+			area := scene.Areas[areaID]
 			object.Draw(area)
 		}
 	}
@@ -74,11 +74,11 @@ func (scene *Scene) Draw() *ebiten.Image {
 
 func (scene *Scene) AddObject(object Drawable, areaID string) {
 	scene.Objects = append(scene.Objects, object)
-	scene.areaIDs[object] = areaID
+	scene.AreaIDs[object] = areaID
 }
 
 func (scene *Scene) AddDrawingArea(areaID string, drawingArea *DrawingArea) {
-	scene.areas[areaID] = drawingArea
+	scene.Areas[areaID] = drawingArea
 }
 
 func (scene *Scene) GetRootArea() *DrawingArea {
@@ -86,7 +86,7 @@ func (scene *Scene) GetRootArea() *DrawingArea {
 }
 
 func (scene *Scene) GetArea(areaID string) *DrawingArea {
-	return scene.areas[areaID]
+	return scene.Areas[areaID]
 }
 
 func CreateScene(image *ebiten.Image, height, width float64) *Scene {
@@ -103,7 +103,7 @@ func CreateScene(image *ebiten.Image, height, width float64) *Scene {
 
 	return &Scene{
 		rootArea: area,
-		areas:    map[string]*DrawingArea{"root_area": area},
-		areaIDs:  map[Drawable]string{},
+		Areas:    map[string]*DrawingArea{"root_area": area},
+		AreaIDs:  map[Drawable]string{},
 	}
 }

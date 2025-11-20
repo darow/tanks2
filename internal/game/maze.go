@@ -365,7 +365,14 @@ func (g *Game) Reset() {
 		char.Input.Reset()
 	}
 
+	// This needs to be remade, quick solution
 	g.activeScene.Objects = g.activeScene.Objects[:2] //len(g.activeScene.Objects)-len(g.Walls)]
+	am := g.activeScene.AreaIDs
+	for obj, id := range am {
+		if id == MAZE_AREA_ID {
+			delete(am, obj)
+		}
+	}
 	mainArea := g.activeScene.GetArea(MAIN_PLAYING_AREA_ID)
 	mainArea.Children = nil
 }
@@ -374,8 +381,12 @@ func (g *Game) SpawnItem() {
 
 }
 
+// debug function
 func (g *Game) SanityCheck() {
 	if len(g.activeScene.Objects) != len(g.Bullets)+len(g.Characters)+len(g.Walls)+2 {
-		log.Print("discrepancy between the expected number of objects on the scene and actual number")
+		log.Println("discrepancy between the expected number of objects on the scene and actual number")
 	}
+
+	log.Println(len(g.activeScene.Areas))
+	log.Println(len(g.activeScene.AreaIDs))
 }

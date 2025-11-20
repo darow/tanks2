@@ -15,6 +15,10 @@ func (uiElem UIElement) IsActive() bool {
 	return uiElem.Active
 }
 
+func (uiElem *UIElement) SetActive(b bool) {
+	uiElem.Active = b
+}
+
 type UIText struct {
 	UIElement
 	font font.Face
@@ -27,4 +31,11 @@ func (uiText UIText) Draw(drawingArea *DrawingArea) {
 
 func (uiText *UIText) SetText(newText string) {
 	uiText.text = newText
+}
+
+func CreateUIText(s string, font font.Face) UIText {
+	return UIText{
+		font: font,
+		text: s,
+	}
 }

@@ -1,5 +1,5 @@
 .vscode
 .idea
-*.exe
+*.exe*
 *.txt
 *.ps1

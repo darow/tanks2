@@ -84,13 +84,15 @@ func main() {
 
 	characters := createCharacters(bullets)
 
-	UIScore1 := models.UIText{}
-	UIScore2 := models.UIText{}
+	UIScore1 := models.CreateUIText("Player 1: 0", REGULAR_FONT)
+	UIScore2 := models.CreateUIText("Player 2: 0", REGULAR_FONT)
 
-	mainScene := buildMainScene(UIScore1, UIScore2)
+	UIScores := []models.UIText{UIScore1, UIScore2}
+
+	mainScene := buildMainScene(UIScores)
 	scenes := map[int]*models.Scene{game.MAIN_SCENE_ID: mainScene}
 
-	tanksGame := game.CreateGame(bullets, characters, scenes)
+	tanksGame := game.CreateGame(bullets, characters, scenes, UIScores)
 
 	tanksGame.SetActiveScene(game.MAIN_SCENE_ID)
 	tanksGame.MakeSuccessConnection(*CONNECTION_MODE, *SERVER_MODE_PORT, *ADDRESS)
@@ -102,7 +104,7 @@ func main() {
 	}
 }
 
-func buildMainScene(score1, score2 models.Drawable) *models.Scene {
+func buildMainScene(scores []models.UIText) *models.Scene {
 	ebitenImage := ebiten.NewImage(SCREEN_SIZE_WIDTH, SCREEN_SIZE_HEIGHT)
 
 	scene := models.CreateScene(ebitenImage, float64(SCREEN_SIZE_HEIGHT), float64(SCREEN_SIZE_WIDTH))
@@ -154,8 +156,12 @@ func buildMainScene(score1, score2 models.Drawable) *models.Scene {
 		})
 	scene.AddDrawingArea(game.SCORE_AREA_2_ID, scoreArea2)
 
-	scene.AddObject(score1, game.SCORE_AREA_1_ID)
-	scene.AddObject(score2, game.SCORE_AREA_2_ID)
+	scoreAreaIDs := []string{game.SCORE_AREA_1_ID, game.SCORE_AREA_2_ID}
+	for i := range scores {
+		scoreUI := &scores[i]
+		scoreUI.SetActive(true)
+		scene.AddObject(scoreUI, scoreAreaIDs[i])
+	}
 
 	return scene
 }
@@ -199,7 +205,7 @@ func createCharacters(bullets []*models.Bullet) []*models.Character {
 		Cooldown: 5,
 	}
 
-	char2 := models.CreateCharacter(0, charImage, &defaultWeapon, cs2)
+	char2 := models.CreateCharacter(1, charImage, &defaultWeapon, cs2)
 	chars = append(chars, &char2)
 
 	return chars

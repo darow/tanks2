@@ -47,8 +47,9 @@ type Game struct {
 	client   *client.Client
 	connMode string
 
-	scenes      map[int]*models.Scene
-	activeScene *models.Scene
+	scoreUITexts []models.UIText
+	scenes       map[int]*models.Scene
+	activeScene  *models.Scene
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
@@ -109,7 +110,7 @@ func (g *Game) Update() error {
 		case <-g.stateEndingTimer.C:
 			for _, char := range g.Characters {
 				if char.IsActive() {
-					g.CharactersScores[char.ID]++
+					g.updateScores(char.ID)
 					break
 				}
 			}
@@ -191,11 +192,12 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	screen.DrawImage(image, &ebiten.DrawImageOptions{})
 }
 
-func CreateGame(bullets []*models.Bullet, characters []*models.Character, scenes map[int]*models.Scene) *Game {
+func CreateGame(bullets []*models.Bullet, characters []*models.Character, scenes map[int]*models.Scene, scoreUIs []models.UIText) *Game {
 	return &Game{
 		Bullets:          bullets,
 		Characters:       characters,
 		CharactersScores: []uint{0, 0, 0, 0},
 		scenes:           scenes,
+		scoreUITexts:     scoreUIs,
 	}
 }

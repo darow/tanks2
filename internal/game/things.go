@@ -1,6 +1,7 @@
 package game
 
 import (
+	"fmt"
 	"math"
 
 	"myebiten/internal/models"
@@ -23,6 +24,11 @@ const (
 )
 
 var TILE_ID_SEQUENCE = 0
+
+func (g *Game) updateScores(id int) {
+	g.CharactersScores[id]++
+	g.scoreUITexts[id].SetText(fmt.Sprintf("Player %d: %d", id+1, g.CharactersScores[id]))
+}
 
 func (g *Game) getClosestWalls(c *models.Character) []*models.Wall {
 	// yes, this is shit, I see it too, dw it will all change

@@ -128,20 +128,6 @@ func (c *Character) DetectBulletToCharacterCollision(b *Bullet) (isCollision boo
 	return distanceSq <= b.R*b.R
 }
 
-func (c *Character) Copy(c2 *Character) {
-	if c2 == nil {
-		c.Position.X = 99999
-		c.Position.Y = 99999
-		return
-	}
-
-	c.Position.X = c2.Position.X
-	c.Position.Y = c2.Position.Y
-	c.Rotation = c2.Rotation
-
-	c.Active = c2.Active
-}
-
 func CreateCharacter(id int, charImage *ebiten.Image, weapon Weapon, controlSettings ControlSettings) Character {
 	return Character{
 		GameObject: GameObject{ID: id},
