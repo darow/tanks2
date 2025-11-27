@@ -2,20 +2,14 @@ package weapons
 
 import (
 	"math"
-	"time"
-
 	"myebiten/internal/models"
+	"time"
 )
 
 const (
 	BULLET_SPEED  = 6
 	BULLETS_COUNT = 5
 )
-
-type Weapon interface {
-	Shoot(origin models.Vector2D, rotation float64)
-	Discharge()
-}
 
 type DefaultWeapon struct {
 	Clip     []*models.Bullet
@@ -24,7 +18,7 @@ type DefaultWeapon struct {
 
 func (dw *DefaultWeapon) Shoot(origin models.Vector2D, rotation float64) {
 	for _, bullet := range dw.Clip {
-		if !bullet.Active {
+		if !bullet.IsActive() {
 			bullet.Position.X = origin.X
 			bullet.Position.Y = origin.Y
 
@@ -34,11 +28,11 @@ func (dw *DefaultWeapon) Shoot(origin models.Vector2D, rotation float64) {
 			bullet.Speed.X = cos * BULLET_SPEED
 			bullet.Speed.Y = sin * BULLET_SPEED
 
-			bullet.Active = true
+			bullet.SetActive(true)
 
 			go func() {
 				time.Sleep(time.Duration(dw.Cooldown) * time.Second)
-				bullet.Active = false
+				bullet.SetActive(false)
 			}()
 
 			break

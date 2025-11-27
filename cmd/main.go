@@ -10,6 +10,7 @@ import (
 	"os"
 	"syscall"
 
+	"myebiten/internal/game"
 	"myebiten/internal/models"
 	"myebiten/internal/weapons"
 	images "myebiten/resources"
@@ -22,25 +23,20 @@ import (
 )
 
 var (
+	NUMBER_OF_CHARACTERS = 4
+
 	REGULAR_FONT              font.Face
 	CHARACTER_IMAGE_TO_RESIZE image.Image
 
 	SCREEN_SIZE_WIDTH  = 2560
 	SCREEN_SIZE_HEIGHT = 1420
 
-	MAX_BOARD_HEIGHT = 7
-	MAX_BOARD_WIDTH  = 12
-
-	MIN_BOARD_HEIGHT = 3
-	MIN_BOARD_WIDTH  = 3
-
 	DEBUG_MODE = flag.Bool("debug", true, "true / false")
 
 	CONNECTION_MODE  = flag.String("mode", "offline", "offline / server / client")
 	SERVER_MODE_PORT = flag.String("server_mode_port", "8080", "IF TRUE THEN GAME IS IN HOST MODE AND WAITING FOR CONNECTION OF OTHER PLAYER")
 
-	ADDRESS            = flag.String("address", "localhost:8080", "IF SET THEN GAME TRYING TO CONNECT TO HOST")
-	SUCCESS_CONNECTION bool
+	ADDRESS = flag.String("address", "localhost:8080", "IF SET THEN GAME TRYING TO CONNECT TO HOST")
 )
 
 func main() {
@@ -81,132 +77,138 @@ func main() {
 		log.Fatal(err)
 	}
 
-	CHARACTER_IMAGE_TO_RESIZE, _, err = image.Decode(bytes.NewReader(images.TankV2png))
+	bullets := make([]*models.Bullet, weapons.BULLETS_COUNT*NUMBER_OF_CHARACTERS)
+	for i := range bullets {
+		bullets[i] = models.CreateBullet(models.BULLET_RADIUS)
+	}
+
+	characters := createCharacters(bullets)
+
+	UIScore1 := models.CreateUIText("Player 1: 0", REGULAR_FONT)
+	UIScore2 := models.CreateUIText("Player 2: 0", REGULAR_FONT)
+
+	UIScores := []models.UIText{UIScore1, UIScore2}
+
+	mainScene := buildMainScene(UIScores)
+	scenes := map[int]*models.Scene{game.MAIN_SCENE_ID: mainScene}
+
+	tanksGame := game.CreateGame(bullets, characters, scenes, UIScores)
+
+	tanksGame.SetActiveScene(game.MAIN_SCENE_ID)
+	tanksGame.MakeSuccessConnection(*CONNECTION_MODE, *SERVER_MODE_PORT, *ADDRESS)
+
+	ebiten.SetFullscreen(false)
+
+	if err := ebiten.RunGame(tanksGame); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func buildMainScene(scores []models.UIText) *models.Scene {
+	ebitenImage := ebiten.NewImage(SCREEN_SIZE_WIDTH, SCREEN_SIZE_HEIGHT)
+
+	scene := models.CreateScene(ebitenImage, float64(SCREEN_SIZE_HEIGHT), float64(SCREEN_SIZE_WIDTH))
+
+	rootArea := scene.GetRootArea()
+
+	mainArea := rootArea.NewArea(
+		rootArea.Height*0.8,
+		rootArea.Width,
+		models.DrawingSettings{
+			Offset: models.Vector2D{X: 0.0, Y: rootArea.Height / 10},
+			Scale:  1.0,
+		})
+	scene.AddDrawingArea(game.MAIN_PLAYING_AREA_ID, mainArea)
+
+	UIArea1 := rootArea.NewArea(
+		rootArea.Height*0.1,
+		rootArea.Width,
+		models.DrawingSettings{
+			Offset: models.Vector2D{X: 0.0, Y: 0.0},
+			Scale:  1.0,
+		})
+	scene.AddDrawingArea(game.UI_AREA1_ID, UIArea1)
+
+	ScoreArea := rootArea.NewArea(
+		rootArea.Height*0.1,
+		rootArea.Width,
+		models.DrawingSettings{
+			Offset: models.Vector2D{X: 0.0, Y: rootArea.Height * 0.9},
+			Scale:  1.0,
+		})
+	scene.AddDrawingArea(game.SCORE_AREA_ID, ScoreArea)
+
+	scoreArea1 := ScoreArea.NewArea(
+		0.99*ScoreArea.Height,
+		0.2*ScoreArea.Width,
+		models.DrawingSettings{
+			Offset: models.Vector2D{X: 0.2 * ScoreArea.Width, Y: 0.5 * ScoreArea.Height},
+			Scale:  1.0,
+		})
+	scene.AddDrawingArea(game.SCORE_AREA_1_ID, scoreArea1)
+
+	scoreArea2 := ScoreArea.NewArea(
+		0.99*ScoreArea.Height,
+		0.2*ScoreArea.Width,
+		models.DrawingSettings{
+			Offset: models.Vector2D{X: 0.6 * ScoreArea.Width, Y: 0.5 * ScoreArea.Height},
+			Scale:  1.0,
+		})
+	scene.AddDrawingArea(game.SCORE_AREA_2_ID, scoreArea2)
+
+	scoreAreaIDs := []string{game.SCORE_AREA_1_ID, game.SCORE_AREA_2_ID}
+	for i := range scores {
+		scoreUI := &scores[i]
+		scoreUI.SetActive(true)
+		scene.AddObject(scoreUI, scoreAreaIDs[i])
+	}
+
+	return scene
+}
+
+func createCharacters(bullets []*models.Bullet) []*models.Character {
+	chars := make([]*models.Character, 0, 2)
+
+	CHARACTER_IMAGE_TO_RESIZE, _, err := image.Decode(bytes.NewReader(images.TankV2png))
 	if err != nil {
 		log.Fatal(err)
 	}
-	resizedCharacterImage := resize.Resize(CHARACTER_WIDTH, 0, CHARACTER_IMAGE_TO_RESIZE, resize.Lanczos3)
+	resizedCharacterImage := resize.Resize(models.CHARACTER_WIDTH, 0, CHARACTER_IMAGE_TO_RESIZE, resize.Lanczos3)
 	charImage := ebiten.NewImageFromImage(resizedCharacterImage)
 
-	cs1 := ControlSettings{
-		rotateRightButton:  ebiten.KeyF,
-		rotateLeftButton:   ebiten.KeyS,
-		moveForwardButton:  ebiten.KeyE,
-		moveBackwardButton: ebiten.KeyD,
-		shootButton:        ebiten.KeySpace,
+	cs1 := models.ControlSettings{
+		RotateRightButton:  ebiten.KeyF,
+		RotateLeftButton:   ebiten.KeyS,
+		MoveForwardButton:  ebiten.KeyE,
+		MoveBackwardButton: ebiten.KeyD,
+		ShootButton:        ebiten.KeySpace,
 	}
 
-	cs2 := ControlSettings{
-		rotateRightButton:  ebiten.KeyRight,
-		rotateLeftButton:   ebiten.KeyLeft,
-		moveForwardButton:  ebiten.KeyUp,
-		moveBackwardButton: ebiten.KeyDown,
-		shootButton:        ebiten.KeySlash,
+	defaultWeapon := weapons.DefaultWeapon{
+		Clip:     bullets[:weapons.BULLETS_COUNT],
+		Cooldown: 5,
 	}
 
-	bullets := make([]*models.Bullet, weapons.BULLETS_COUNT*2)
-	for i := range bullets {
-		bullets[i] = &models.Bullet{
-			R: float64(BULLET_RADIUS),
-		}
+	char1 := models.CreateCharacter(0, charImage, &defaultWeapon, cs1)
+	chars = append(chars, &char1)
+
+	cs2 := models.ControlSettings{
+		RotateRightButton:  ebiten.KeyRight,
+		RotateLeftButton:   ebiten.KeyLeft,
+		MoveForwardButton:  ebiten.KeyUp,
+		MoveBackwardButton: ebiten.KeyDown,
+		ShootButton:        ebiten.KeySlash,
 	}
 
-	bullets1 := bullets[:weapons.BULLETS_COUNT]
-	bullets2 := bullets[weapons.BULLETS_COUNT:]
-
-	characters := []*Character{
-		{
-			GameObject: models.GameObject{
-				ID:       0,
-				Active:   true,
-				Position: models.Vector2D{X: 400, Y: 400},
-				Rotation: 0.0,
-			},
-
-			Hitbox: RectangleHitbox{CHARACTER_WIDTH, CHARACTER_WIDTH},
-			Sprite: ImageSprite{charImage},
-			weapon: &weapons.DefaultWeapon{Clip: bullets1, Cooldown: 5},
-			input: Input{
-				ControlSettings: cs1,
-			},
-		},
-		{
-			GameObject: models.GameObject{
-				ID:       1,
-				Active:   true,
-				Position: models.Vector2D{X: 700, Y: 500},
-				Rotation: 0.0,
-			},
-
-			Hitbox: RectangleHitbox{CHARACTER_WIDTH, CHARACTER_WIDTH},
-			Sprite: ImageSprite{charImage},
-			weapon: &weapons.DefaultWeapon{Clip: bullets2, Cooldown: 5},
-			input: Input{
-				ControlSettings: cs2,
-			},
-		},
+	defaultWeapon = weapons.DefaultWeapon{
+		Clip:     bullets[weapons.BULLETS_COUNT:],
+		Cooldown: 5,
 	}
 
-	ebitenImage := ebiten.NewImage(SCREEN_SIZE_WIDTH, SCREEN_SIZE_HEIGHT)
+	char2 := models.CreateCharacter(1, charImage, &defaultWeapon, cs2)
+	chars = append(chars, &char2)
 
-	mainArea := &models.DrawingArea{
-		BoardImage: ebitenImage,
-		DrawingSettings: models.DrawingSettings{
-			Offset: models.Vector2D{X: 0.0, Y: float64(SCREEN_SIZE_HEIGHT) / 10},
-			Scale:  1.0,
-		},
-		Height: float64(SCREEN_SIZE_HEIGHT) * 0.8,
-		Width:  float64(SCREEN_SIZE_WIDTH),
-	}
-
-	UIArea1 := &models.DrawingArea{
-		BoardImage: ebitenImage,
-		DrawingSettings: models.DrawingSettings{
-			Offset: models.Vector2D{X: 0.0, Y: 0.0},
-			Scale:  1.0,
-		},
-		Height: float64(SCREEN_SIZE_HEIGHT) * 0.1,
-		Width:  float64(SCREEN_SIZE_WIDTH),
-	}
-
-	UIArea2 := &models.DrawingArea{
-		BoardImage: ebitenImage,
-		DrawingSettings: models.DrawingSettings{
-			Offset: models.Vector2D{X: 0.0, Y: float64(SCREEN_SIZE_HEIGHT) * 0.9},
-			Scale:  1.0,
-		},
-		Height: float64(SCREEN_SIZE_HEIGHT) * 0.1,
-		Width:  float64(SCREEN_SIZE_WIDTH),
-	}
-
-	UIArea2.NewArea(0.99*UIArea2.Height, 0.2*UIArea2.Width, models.DrawingSettings{Offset: models.Vector2D{X: 0.2 * UIArea2.Width, Y: 0.5 * UIArea2.Height}, Scale: 1.0})
-	UIArea2.NewArea(0.99*UIArea2.Height, 0.2*UIArea2.Width, models.DrawingSettings{Offset: models.Vector2D{X: 0.6 * UIArea2.Width, Y: 0.5 * UIArea2.Height}, Scale: 1.0})
-
-	game := &Game{
-		boardImage:       ebitenImage,
-		leftAlive:        2,
-		Bullets:          bullets,
-		Characters:       characters,
-		CharactersScores: []uint{0, 0},
-		mainArea:         mainArea,
-		UIArea1:          UIArea1,
-		UIArea2:          UIArea2,
-	}
-
-	if *CONNECTION_MODE != CONNECTION_MODE_OFFLINE && !SUCCESS_CONNECTION {
-		game.makeSuccessConnection()
-		//if *CONNECTION_MODE == CONNECTION_MODE_SERVER {
-		//	game.Characters[0].input.ControlSettings = ControlSettings{}
-		//}
-		//if *CONNECTION_MODE == CONNECTION_MODE_CLIENT {
-		//	game.Characters[1].input.ControlSettings = ControlSettings{}
-		//}
-	}
-	ebiten.SetFullscreen(true)
-
-	if err := ebiten.RunGame(game); err != nil {
-		log.Fatal(err)
-	}
+	return chars
 }
 
 func setScreenSizeParams() {
