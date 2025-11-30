@@ -39,3 +39,12 @@ func CreateUIText(s string, font font.Face) UIText {
 		text: s,
 	}
 }
+
+type UIPanel struct {
+	UIElement
+	sprite RectangleSprite
+}
+
+func (uiPanel UIPanel) Draw(drawingArea *DrawingArea) {
+	uiPanel.sprite.Draw(0.0, 0.0, 0.0, drawingArea)
+}

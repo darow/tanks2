@@ -49,14 +49,14 @@ func (d *DrawingArea) NewArea(height, width float64, settings DrawingSettings) (
 	return
 }
 
-type Scene struct {
+type SceneUI struct {
 	Objects  []Drawable
 	rootArea *DrawingArea
 	AreaIDs  map[Drawable]string
 	Areas    map[string]*DrawingArea
 }
 
-func (scene *Scene) Draw() *ebiten.Image {
+func (scene *SceneUI) Draw() *ebiten.Image {
 	boardImage := scene.rootArea.BoardImage
 	boardImage.Clear()
 	boardImage.Fill(COLOR_BACKGROUND)
@@ -72,24 +72,29 @@ func (scene *Scene) Draw() *ebiten.Image {
 	return boardImage
 }
 
-func (scene *Scene) AddObject(object Drawable, areaID string) {
+func (scene *SceneUI) AddObject(object Drawable, areaID string) {
 	scene.Objects = append(scene.Objects, object)
 	scene.AreaIDs[object] = areaID
 }
 
-func (scene *Scene) AddDrawingArea(areaID string, drawingArea *DrawingArea) {
+func (scene *SceneUI) AddDrawingArea(areaID string, drawingArea *DrawingArea) {
 	scene.Areas[areaID] = drawingArea
 }
 
-func (scene *Scene) GetRootArea() *DrawingArea {
+func (scene *SceneUI) GetRootArea() *DrawingArea {
 	return scene.rootArea
 }
 
-func (scene *Scene) GetArea(areaID string) *DrawingArea {
+func (scene *SceneUI) GetArea(areaID string) *DrawingArea {
 	return scene.Areas[areaID]
 }
 
-func CreateScene(image *ebiten.Image, height, width float64) *Scene {
+type Scene interface {
+	Update() error
+	Draw() *ebiten.Image
+}
+
+func CreateScene(image *ebiten.Image, height, width float64) SceneUI {
 	area := &DrawingArea{
 		BoardImage: image,
 
@@ -101,7 +106,7 @@ func CreateScene(image *ebiten.Image, height, width float64) *Scene {
 		Width:  width,
 	}
 
-	return &Scene{
+	return SceneUI{
 		rootArea: area,
 		Areas:    map[string]*DrawingArea{"root_area": area},
 		AreaIDs:  map[Drawable]string{},

@@ -1,7 +1,6 @@
 package game
 
 import (
-	"log"
 	"math"
 	"math/rand"
 
@@ -68,91 +67,6 @@ func getSceneCoordinates(i, j int) models.Vector2D {
 	ww := float64(WALL_WIDTH)
 
 	return models.Vector2D{X: float64(j-1)*(wh-ww) + wh/2, Y: float64(i-1)*(wh-ww) + wh/2}
-}
-
-func (g *Game) SetupLevel() (int, int, []models.Wall) {
-	h := rand.Intn(MAX_BOARD_HEIGHT-MIN_BOARD_HEIGHT) + MIN_BOARD_HEIGHT
-	w := rand.Intn(MAX_BOARD_WIDTH-MIN_BOARD_WIDTH) + MIN_BOARD_WIDTH
-
-	walls := g.CreateMaze(h, w)
-	g.SetDrawingSettings(h, w)
-	g.SetCharacters(h, w)
-
-	return h, w, walls
-}
-
-func (g *Game) SetCharacters(h, w int) {
-	spawnPlaces := []models.Vector2D{}
-	for range g.Characters {
-		i := rand.Intn(h) + 1
-		j := rand.Intn(w) + 1
-		spawnPlace := getSceneCoordinates(i, j)
-		spawnPlaces = append(spawnPlaces, spawnPlace)
-	}
-
-	i := 0
-	for _, char := range g.Characters {
-		if !char.Active {
-			continue
-		}
-
-		char.Position.X = spawnPlaces[i].X
-		char.Position.Y = spawnPlaces[i].Y
-
-		char.Rotation = math.Pi / 2
-
-		char.Speed.X = 0
-		char.Speed.Y = 0
-
-		i++
-	}
-}
-
-func (g *Game) CreateMaze(h, w int) []models.Wall {
-	g.Walls = make([]models.Wall, 0)
-
-	g.Maze = createMaze(h, w)
-	g.Walls = buildMaze(g.Maze, g.Walls)
-
-	return g.Walls
-}
-
-func (g *Game) SetDrawingSettings(h, w int) {
-	mainArea := g.activeScene.GetArea(MAIN_PLAYING_AREA_ID)
-	if mainArea == nil {
-		log.Fatal("Main playing area is not set")
-	}
-
-	areaHeight := mainArea.Height
-	areaWidth := mainArea.Width
-
-	mazeHeight := float64(h*(WALL_HEIGHT-WALL_WIDTH) + WALL_WIDTH)
-	mazeWidth := float64(w*(WALL_HEIGHT-WALL_WIDTH) + WALL_WIDTH)
-
-	scalingFactor := min(areaHeight/mazeHeight, areaWidth/mazeWidth)
-
-	mazeHeight *= scalingFactor
-	mazeWidth *= scalingFactor
-
-	newDrawingSettings := models.DrawingSettings{
-		Offset: models.Vector2D{X: (areaWidth - mazeWidth) / 2, Y: (areaHeight - mazeHeight) / 2},
-		Scale:  scalingFactor,
-	}
-
-	mazeArea := mainArea.NewArea(mazeHeight, mazeWidth, newDrawingSettings)
-	g.activeScene.AddDrawingArea(MAZE_AREA_ID, mazeArea)
-
-	for _, bullet := range g.Bullets {
-		g.activeScene.AddObject(bullet, MAZE_AREA_ID)
-	}
-
-	for _, char := range g.Characters {
-		g.activeScene.AddObject(char, MAZE_AREA_ID)
-	}
-
-	for _, wall := range g.Walls {
-		g.activeScene.AddObject(&wall, MAZE_AREA_ID)
-	}
 }
 
 func getRandomDirection(prevDir int) int {
@@ -353,40 +267,4 @@ func buildMaze(mazeNodes [][]MazeNode, walls []models.Wall) []models.Wall {
 	}
 
 	return walls
-}
-
-func (g *Game) Reset() {
-	for _, bullet := range g.Bullets {
-		bullet.SetActive(false)
-	}
-
-	for _, char := range g.Characters {
-		char.SetActive(true)
-		char.Input.Reset()
-	}
-
-	// This needs to be remade, quick solution
-	g.activeScene.Objects = g.activeScene.Objects[:2] //len(g.activeScene.Objects)-len(g.Walls)]
-	am := g.activeScene.AreaIDs
-	for obj, id := range am {
-		if id == MAZE_AREA_ID {
-			delete(am, obj)
-		}
-	}
-	mainArea := g.activeScene.GetArea(MAIN_PLAYING_AREA_ID)
-	mainArea.Children = nil
-}
-
-func (g *Game) SpawnItem() {
-
-}
-
-// debug function
-func (g *Game) SanityCheck() {
-	if len(g.activeScene.Objects) != len(g.Bullets)+len(g.Characters)+len(g.Walls)+2 {
-		log.Println("discrepancy between the expected number of objects on the scene and actual number")
-	}
-
-	log.Println(len(g.activeScene.Areas))
-	log.Println(len(g.activeScene.AreaIDs))
 }
