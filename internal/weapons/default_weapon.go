@@ -12,32 +12,30 @@ const (
 )
 
 type DefaultWeapon struct {
-	Clip     []*models.Bullet
+	Clip     models.Pool[*models.Bullet]
 	Cooldown int64
 }
 
 func (dw *DefaultWeapon) Shoot(origin models.Vector2D, rotation float64) {
-	for _, bullet := range dw.Clip {
-		if !bullet.IsActive() {
-			bullet.Position.X = origin.X
-			bullet.Position.Y = origin.Y
-
-			bullet.Rotation = rotation
-
-			sin, cos := math.Sincos(rotation)
-			bullet.Speed.X = cos * BULLET_SPEED
-			bullet.Speed.Y = sin * BULLET_SPEED
-
-			bullet.SetActive(true)
-
-			go func() {
-				time.Sleep(time.Duration(dw.Cooldown) * time.Second)
-				bullet.SetActive(false)
-			}()
-
-			break
-		}
+	bullet := dw.Clip.Get()
+	if bullet == nil {
+		return
 	}
+	bullet.Position.X = origin.X
+	bullet.Position.Y = origin.Y
+
+	bullet.Rotation = rotation
+
+	sin, cos := math.Sincos(rotation)
+	bullet.Speed.X = cos * BULLET_SPEED
+	bullet.Speed.Y = sin * BULLET_SPEED
+
+	bullet.SetActive(true)
+
+	go func() {
+		time.Sleep(time.Duration(dw.Cooldown) * time.Second)
+		bullet.SetActive(false)
+	}()
 
 	dw.Discharge()
 }

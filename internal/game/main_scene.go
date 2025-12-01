@@ -570,7 +570,7 @@ func (mainScene *MainScene) CreateCharacter(id int) {
 	}
 
 	defaultWeapon := weapons.DefaultWeapon{
-		Clip:     mainScene.Bullets[:weapons.BULLETS_COUNT],
+		Clip:     models.CreatePool(mainScene.Bullets[id*weapons.BULLETS_COUNT : (id+1)*weapons.BULLETS_COUNT]),
 		Cooldown: 5,
 	}
 
