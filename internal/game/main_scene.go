@@ -11,6 +11,8 @@ import (
 	"math/rand"
 	"myebiten/internal/models"
 	"myebiten/internal/weapons"
+	"myebiten/internal/websocket/client"
+	"myebiten/internal/websocket/server"
 	images "myebiten/resources"
 	"time"
 
@@ -19,7 +21,7 @@ import (
 )
 
 type MainScene struct {
-	models.SceneUI
+	models.SceneUI `json:"-"`
 
 	stateEndingTimer *time.Timer
 	itemSpawnTicker  *time.Ticker
@@ -33,10 +35,12 @@ type MainScene struct {
 	Characters       []*models.Character
 	CharactersScores []uint
 
-	scoreUITexts []models.UIText
-	pauseMenu    models.UIPanel
+	scoreUITexts []models.UIText `json:"-"`
+	pauseMenu    models.UIPanel  `json:"-"`
 
-	g *Game
+	getConnectionMode func() string
+	getGameClient     func() *client.Client
+	getGameServer     func() *server.Server
 }
 
 func CreateMainScene() *MainScene {
@@ -51,9 +55,11 @@ func CreateMainScene() *MainScene {
 
 	mainSceneUI := buildMainSceneUI(UIScores)
 	return &MainScene{
-		SceneUI: mainSceneUI,
-		state:   STATE_MAZE_CREATING,
-		Bullets: bullets,
+		SceneUI:          mainSceneUI,
+		state:            STATE_MAZE_CREATING,
+		scoreUITexts:     UIScores,
+		Bullets:          bullets,
+		CharactersScores: []uint{0, 0},
 	}
 }
 
@@ -120,7 +126,10 @@ func buildMainSceneUI(scores []models.UIText) models.SceneUI {
 }
 
 func (mainScene *MainScene) Update() error {
-	if mainScene.g.connMode == CONNECTION_MODE_CLIENT {
+	connectionMode := mainScene.getConnectionMode()
+	client, server := mainScene.getGameClient(), mainScene.getGameServer()
+
+	if connectionMode == CONNECTION_MODE_CLIENT {
 		char := mainScene.Characters[0]
 
 		char.Input.Update()
@@ -130,7 +139,7 @@ func (mainScene *MainScene) Update() error {
 			log.Fatal(err)
 		}
 
-		err = mainScene.g.client.WriteMessage(msg)
+		err = client.WriteMessage(msg)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -139,7 +148,7 @@ func (mainScene *MainScene) Update() error {
 			char.Input.Shoot = false
 		}
 
-		mainScene.g.UpdateGameFromServer()
+		mainScene.UpdateGameFromServer(client)
 
 		return nil
 	}
@@ -149,8 +158,8 @@ func (mainScene *MainScene) Update() error {
 		mainScene.Reset()
 		mainScene.itemSpawnTicker = time.NewTicker(ITEM_SPAWN_INTERVAL * time.Second)
 		h, w, walls := mainScene.SetupLevel()
-		if mainScene.g.connMode != CONNECTION_MODE_OFFLINE {
-			mainScene.g.SendMazeToClient(h, w, walls)
+		if connectionMode != CONNECTION_MODE_OFFLINE {
+			SendMazeToClient(server, h, w, walls)
 		}
 		mainScene.leftAlive = 2
 		mainScene.state = STATE_GAME_RUNNING
@@ -190,9 +199,9 @@ func (mainScene *MainScene) Update() error {
 			continue
 		}
 
-		if i == 1 && mainScene.g.connMode == CONNECTION_MODE_SERVER {
+		if i == 1 && connectionMode == CONNECTION_MODE_SERVER {
 			// process client's character's input
-			msg := mainScene.g.server.ReadMessage()
+			msg := server.ReadMessage()
 
 			var input models.Input
 			err := json.Unmarshal(msg, &input)
@@ -234,12 +243,12 @@ func (mainScene *MainScene) Update() error {
 		}
 	}
 
-	if mainScene.g.connMode == CONNECTION_MODE_SERVER {
-		msg, err := json.Marshal(mainScene.g)
+	if connectionMode == CONNECTION_MODE_SERVER {
+		msg, err := json.Marshal(mainScene)
 		if err != nil {
 			log.Fatal(err)
 		}
-		err = mainScene.g.server.WriteThingsMessage(msg)
+		err = server.WriteThingsMessage(msg)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -442,7 +451,7 @@ func (mainScene *MainScene) SetCharacters(h, w int) {
 
 	i := 0
 	for _, char := range mainScene.Characters {
-		if !char.Active {
+		if !char.IsActive() {
 			continue
 		}
 
@@ -539,12 +548,25 @@ func (mainScene *MainScene) CreateCharacter(id int) {
 	resizedCharacterImage := resize.Resize(models.CHARACTER_WIDTH, 0, CHARACTER_IMAGE_TO_RESIZE, resize.Lanczos3)
 	charImage := ebiten.NewImageFromImage(resizedCharacterImage)
 
-	cs1 := models.ControlSettings{
-		RotateRightButton:  ebiten.KeyF,
-		RotateLeftButton:   ebiten.KeyS,
-		MoveForwardButton:  ebiten.KeyE,
-		MoveBackwardButton: ebiten.KeyD,
-		ShootButton:        ebiten.KeySpace,
+	var cs models.ControlSettings
+	switch id {
+	case 0:
+		cs = models.ControlSettings{
+			RotateRightButton:  ebiten.KeyF,
+			RotateLeftButton:   ebiten.KeyS,
+			MoveForwardButton:  ebiten.KeyE,
+			MoveBackwardButton: ebiten.KeyD,
+			ShootButton:        ebiten.KeySpace,
+		}
+
+	case 1:
+		cs = models.ControlSettings{
+			RotateRightButton:  ebiten.KeyArrowRight,
+			RotateLeftButton:   ebiten.KeyArrowLeft,
+			MoveForwardButton:  ebiten.KeyArrowUp,
+			MoveBackwardButton: ebiten.KeyArrowDown,
+			ShootButton:        ebiten.KeySlash,
+		}
 	}
 
 	defaultWeapon := weapons.DefaultWeapon{
@@ -552,8 +574,10 @@ func (mainScene *MainScene) CreateCharacter(id int) {
 		Cooldown: 5,
 	}
 
-	char := models.CreateCharacter(id, charImage, &defaultWeapon, cs1)
+	char := models.CreateCharacter(id, charImage, &defaultWeapon, cs)
+	char.SetActive(true)
 	mainScene.Characters = append(mainScene.Characters, &char)
+	mainScene.AddObject(&char, MAZE_AREA_ID)
 }
 
 // debug function

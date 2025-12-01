@@ -9,7 +9,6 @@ import (
 	"syscall"
 
 	"myebiten/internal/game"
-	"myebiten/internal/models"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/examples/resources/fonts"
@@ -63,24 +62,9 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	menuScene := &game.LobbyScene{}
-	lobbyScene := &game.LobbyScene{}
-	mainScene := game.CreateMainScene()
-
-	scenes := map[int]models.Scene{
-		game.MENU_SCENE_ID:  menuScene,
-		game.LOBBY_SCENE_ID: lobbyScene,
-		game.MAIN_SCENE_ID:  mainScene,
-	}
-
-	tanksGame := game.CreateGame(scenes)
-
-	tanksGame.SetActiveScene(game.MAIN_SCENE_ID)
-	tanksGame.MakeSuccessConnection(*CONNECTION_MODE, *SERVER_MODE_PORT, *ADDRESS)
-
 	ebiten.SetFullscreen(false)
 
+	tanksGame := game.CreateGame(*CONNECTION_MODE, *SERVER_MODE_PORT, *ADDRESS)
 	if err := ebiten.RunGame(tanksGame); err != nil {
 		log.Fatal(err)
 	}

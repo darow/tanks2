@@ -31,7 +31,7 @@ const (
 	STATE_GAME_ENDING
 )
 
-var noChars = false
+var noChars = true
 
 var wallsToCheck []*models.Wall = make([]*models.Wall, 12)
 var (
@@ -56,7 +56,7 @@ func (g *Game) Update() error {
 	if noChars {
 		g.CreateCharacter(0)
 		g.CreateCharacter(1)
-		noChars = true
+		noChars = false
 	}
 	return g.activeScene.Update()
 }
@@ -68,8 +68,34 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	screen.DrawImage(image, &ebiten.DrawImageOptions{})
 }
 
-func CreateGame(scenes map[int]models.Scene) *Game {
-	return &Game{
-		scenes: scenes,
+func CreateGame(connectionMode, serverPort, address string) *Game {
+	game := Game{}
+
+	menuScene := &LobbyScene{}
+	lobbyScene := &LobbyScene{}
+	mainScene := CreateMainScene()
+
+	mainScene.getConnectionMode = game.getConnectionMode
+	mainScene.getGameClient = game.getClient
+	mainScene.getGameServer = game.getServer
+
+	game.scenes = make(map[int]models.Scene, 3)
+
+	game.scenes[MENU_SCENE_ID] = menuScene
+	game.scenes[LOBBY_SCENE_ID] = lobbyScene
+	game.scenes[MAIN_SCENE_ID] = mainScene
+
+	switch connectionMode {
+	case CONNECTION_MODE_SERVER:
+		game.server = server.New(serverPort)
+	case CONNECTION_MODE_CLIENT:
+		game.client = client.New(address)
+		go mainScene.ReceiveMazeUpdates()
+	default:
 	}
+	game.connMode = connectionMode
+
+	game.SetActiveScene(MAIN_SCENE_ID)
+
+	return &game
 }

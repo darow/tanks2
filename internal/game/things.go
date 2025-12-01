@@ -1,5 +1,10 @@
 package game
 
+import (
+	"myebiten/internal/websocket/client"
+	"myebiten/internal/websocket/server"
+)
+
 const (
 	ROOT_AREA_ID         = "root_area"
 	MAIN_PLAYING_AREA_ID = "main_playing_area"
@@ -19,6 +24,18 @@ const (
 )
 
 var TILE_ID_SEQUENCE = 0
+
+func (g *Game) getConnectionMode() string {
+	return g.connMode
+}
+
+func (g *Game) getServer() *server.Server {
+	return g.server
+}
+
+func (g *Game) getClient() *client.Client {
+	return g.client
+}
 
 func (g *Game) CreateCharacter(id int) {
 	g.scenes[MAIN_SCENE_ID].(*MainScene).CreateCharacter(id)
