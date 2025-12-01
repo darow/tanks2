@@ -21,22 +21,10 @@ type MazeDTO struct {
 	Walls []models.Wall
 }
 
-func (g *Game) MakeSuccessConnection(connectionMode, serverPort, address string) {
-	switch connectionMode {
-	case CONNECTION_MODE_SERVER:
-		g.server = server.New(serverPort)
-	case CONNECTION_MODE_CLIENT:
-		g.client = client.New(address)
-		go g.ReceiveMazeUpdates()
-	default:
-	}
-	g.connMode = connectionMode
-}
+func (mainScene *MainScene) UpdateGameFromServer(client *client.Client) {
+	msg := client.ReadMessage()
 
-func (g *Game) UpdateGameFromServer() {
-	msg := g.client.ReadMessage()
-
-	var newGame Game
+	var newGame MainScene
 	err := json.Unmarshal(msg, &newGame)
 	if err != nil {
 		log.Println(err)
@@ -47,10 +35,10 @@ func (g *Game) UpdateGameFromServer() {
 		return
 	}
 
-	g.Characters = copyCharacters(g.Characters, newGame.Characters)
-	g.Bullets = copyBullets(g.Bullets, newGame.Bullets)
+	mainScene.Characters = copyCharacters(mainScene.Characters, newGame.Characters)
+	mainScene.Bullets = copyBullets(mainScene.Bullets, newGame.Bullets)
 
-	g.CharactersScores = newGame.CharactersScores
+	mainScene.CharactersScores = newGame.CharactersScores
 }
 
 // func (c *Character) SendInputToServer(ws *websocket.Conn) {
@@ -106,9 +94,10 @@ func copyBullets(dst []*models.Bullet, src []*models.Bullet) []*models.Bullet {
 	return dst
 }
 
-func (g *Game) ReceiveMazeUpdates() {
+func (mainScene *MainScene) ReceiveMazeUpdates() {
+	client := mainScene.getGameClient()
 	for {
-		_, message, err := g.client.MapUpdateConn.ReadMessage()
+		_, message, err := client.MapUpdateConn.ReadMessage()
 		if err != nil {
 			log.Println(runtime.Caller(1))
 			log.Println(err)
@@ -124,19 +113,19 @@ func (g *Game) ReceiveMazeUpdates() {
 			log.Fatal(err)
 		}
 
-		g.Walls = maze.Walls
+		mainScene.Walls = maze.Walls
 
-		for i := range g.Walls {
-			g.Walls[i].Hitbox = models.RectangleHitbox{W: WALL_WIDTH, H: WALL_HEIGHT}
-			g.Walls[i].Sprite = models.RectangleSprite{W: WALL_WIDTH, H: WALL_HEIGHT}
+		for i := range mainScene.Walls {
+			mainScene.Walls[i].Hitbox = models.RectangleHitbox{W: WALL_WIDTH, H: WALL_HEIGHT}
+			mainScene.Walls[i].Sprite = models.RectangleSprite{W: WALL_WIDTH, H: WALL_HEIGHT}
 		}
 
-		g.Reset()
-		g.SetDrawingSettings(maze.H, maze.W)
+		mainScene.Reset()
+		mainScene.SetDrawingSettings(maze.H, maze.W)
 	}
 }
 
-func (g *Game) SendMazeToClient(h, w int, walls []models.Wall) {
+func SendMazeToClient(server *server.Server, h, w int, walls []models.Wall) {
 	maze := MazeDTO{h, w, walls}
 
 	msg, err := json.Marshal(maze)
@@ -144,7 +133,7 @@ func (g *Game) SendMazeToClient(h, w int, walls []models.Wall) {
 		log.Fatal(err)
 	}
 
-	err = g.server.WriteMapMessage(msg)
+	err = server.WriteMapMessage(msg)
 
 	if err != nil {
 		log.Fatal(err)
