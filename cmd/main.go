@@ -28,6 +28,8 @@ var (
 func main() {
 	flag.Parse()
 
+	ebiten.SetTPS(500)
+
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	outputFileName := fmt.Sprintf("%s.txt", *CONNECTION_MODE)
 	f, err := os.Create(outputFileName)
