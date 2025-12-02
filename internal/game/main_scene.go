@@ -66,7 +66,7 @@ func CreateMainScene() *MainScene {
 func buildMainSceneUI(scores []models.UIText) models.SceneUI {
 	ebitenImage := ebiten.NewImage(SCREEN_SIZE_WIDTH, SCREEN_SIZE_HEIGHT)
 
-	scene := models.CreateScene(ebitenImage, float64(SCREEN_SIZE_HEIGHT), float64(SCREEN_SIZE_WIDTH))
+	scene := models.CreateSceneUI(ebitenImage, float64(SCREEN_SIZE_HEIGHT), float64(SCREEN_SIZE_WIDTH))
 
 	rootArea := scene.GetRootArea()
 
@@ -406,24 +406,24 @@ func (mainScene *MainScene) DetectBulletToWallCollision(b *models.Bullet) {
 	}
 
 	if verticalReflection {
-		cosine := math.Abs(b.Speed.X) / b.Speed.Length()
-		l := minDist / cosine
-		L := b.R / cosine
-		t := (L - l) / b.Speed.Length()
+		// cosine := math.Abs(b.Speed.X) / b.Speed.Length()
+		// l := minDist / cosine
+		// L := b.R / cosine
+		// t := (L - l) / b.Speed.Length()
 
-		b.Position.X -= t * b.Speed.X
-		b.Position.Y -= t * b.Speed.Y
+		// b.Position.X -= t * b.Speed.X
+		// b.Position.Y -= t * b.Speed.Y
 
 		b.Speed.X = -b.Speed.X
 
 	} else if horizontalReflection {
-		cosine := math.Abs(b.Speed.Y) / b.Speed.Length()
-		l := minDist / cosine
-		L := b.R / cosine
-		t := (L - l) / b.Speed.Length()
+		// cosine := math.Abs(b.Speed.Y) / b.Speed.Length()
+		// l := minDist / cosine
+		// L := b.R / cosine
+		// t := (L - l) / b.Speed.Length()
 
-		b.Position.X -= t * b.Speed.X
-		b.Position.Y -= t * b.Speed.Y
+		// b.Position.X -= t * b.Speed.X
+		// b.Position.Y -= t * b.Speed.Y
 
 		b.Speed.Y = -b.Speed.Y
 	}

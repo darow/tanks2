@@ -56,15 +56,15 @@ type SceneUI struct {
 	Areas    map[string]*DrawingArea
 }
 
-func (scene *SceneUI) Draw() *ebiten.Image {
-	boardImage := scene.rootArea.BoardImage
+func (sceneUI *SceneUI) Draw() *ebiten.Image {
+	boardImage := sceneUI.rootArea.BoardImage
 	boardImage.Clear()
 	boardImage.Fill(COLOR_BACKGROUND)
 
-	for _, object := range scene.Objects {
+	for _, object := range sceneUI.Objects {
 		if object.IsActive() {
-			areaID := scene.AreaIDs[object]
-			area := scene.Areas[areaID]
+			areaID := sceneUI.AreaIDs[object]
+			area := sceneUI.Areas[areaID]
 			object.Draw(area)
 		}
 	}
@@ -72,21 +72,21 @@ func (scene *SceneUI) Draw() *ebiten.Image {
 	return boardImage
 }
 
-func (scene *SceneUI) AddObject(object Drawable, areaID string) {
-	scene.Objects = append(scene.Objects, object)
-	scene.AreaIDs[object] = areaID
+func (sceneUI *SceneUI) AddObject(object Drawable, areaID string) {
+	sceneUI.Objects = append(sceneUI.Objects, object)
+	sceneUI.AreaIDs[object] = areaID
 }
 
-func (scene *SceneUI) AddDrawingArea(areaID string, drawingArea *DrawingArea) {
-	scene.Areas[areaID] = drawingArea
+func (sceneUI *SceneUI) AddDrawingArea(areaID string, drawingArea *DrawingArea) {
+	sceneUI.Areas[areaID] = drawingArea
 }
 
-func (scene *SceneUI) GetRootArea() *DrawingArea {
-	return scene.rootArea
+func (sceneUI *SceneUI) GetRootArea() *DrawingArea {
+	return sceneUI.rootArea
 }
 
-func (scene *SceneUI) GetArea(areaID string) *DrawingArea {
-	return scene.Areas[areaID]
+func (sceneUI *SceneUI) GetArea(areaID string) *DrawingArea {
+	return sceneUI.Areas[areaID]
 }
 
 type Scene interface {
@@ -94,7 +94,7 @@ type Scene interface {
 	Draw() *ebiten.Image
 }
 
-func CreateScene(image *ebiten.Image, height, width float64) SceneUI {
+func CreateSceneUI(image *ebiten.Image, height, width float64) SceneUI {
 	area := &DrawingArea{
 		BoardImage: image,
 

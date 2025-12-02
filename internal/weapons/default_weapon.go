@@ -21,6 +21,7 @@ func (dw *DefaultWeapon) Shoot(origin models.Vector2D, rotation float64) {
 	if bullet == nil {
 		return
 	}
+
 	bullet.Position.X = origin.X
 	bullet.Position.Y = origin.Y
 
