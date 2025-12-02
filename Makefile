@@ -4,11 +4,11 @@ target:
 local:
 	go run ./cmd
 
-run: run_server run_client
+run: server client
 
-run_server:
+server:
 	go run ./cmd -mode=server -debug
 
-run_client:
+client:
 	@sleep 1
 	go run ./cmd -mode=client -debug

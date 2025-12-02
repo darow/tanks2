@@ -9,12 +9,13 @@ import (
 	"log"
 	"math"
 	"math/rand"
+	"time"
+
 	"myebiten/internal/models"
 	"myebiten/internal/weapons"
 	"myebiten/internal/websocket/client"
 	"myebiten/internal/websocket/server"
 	images "myebiten/resources"
-	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/nfnt/resize"
