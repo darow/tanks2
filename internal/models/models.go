@@ -91,6 +91,9 @@ type ImageSprite struct {
 }
 
 func (imageSprite ImageSprite) Draw(centerX, centerY, rotation float64, drawingArea *DrawingArea) {
+	if drawingArea == nil || imageSprite.Image == nil {
+		return
+	}
 	op := &ebiten.DrawImageOptions{}
 
 	w := imageSprite.Image.Bounds().Max.X - imageSprite.Image.Bounds().Min.X

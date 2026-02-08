@@ -65,6 +65,9 @@ func (sceneUI *SceneUI) Draw() *ebiten.Image {
 		if object.IsActive() {
 			areaID := sceneUI.AreaIDs[object]
 			area := sceneUI.Areas[areaID]
+			if area == nil {
+				continue
+			}
 			object.Draw(area)
 		}
 	}

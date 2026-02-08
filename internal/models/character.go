@@ -7,8 +7,8 @@ import (
 )
 
 const (
-	CHARACTER_ROTATION_SPEED = 0.05
-	CHARACTER_SPEED          = 5
+	CHARACTER_ROTATION_SPEED = 0.00625 // 0.05 / 8 (4x then 2x slower)
+	CHARACTER_SPEED          = 0.625  // 5 / 8
 	CHARACTER_WIDTH          = 70
 )
 
