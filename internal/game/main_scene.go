@@ -201,16 +201,7 @@ func (mainScene *MainScene) Update() error {
 		}
 
 		if i == 1 && connectionMode == CONNECTION_MODE_SERVER {
-			// process client's character's input
-			msg := server.ReadMessage()
-
-			var input models.Input
-			err := json.Unmarshal(msg, &input)
-			if err != nil {
-				continue
-			}
-
-			char.Input = input
+			char.Input = server.ReadInput()
 		} else {
 			char.Input.Update()
 		}

@@ -1,23 +1,27 @@
 package server
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 	"runtime"
 	"sync"
 
+	"myebiten/internal/models"
+
 	"github.com/gorilla/websocket"
 )
 
-type MessageStore struct {
+type InputStore struct {
 	sync.Mutex
-	message []byte
+	input models.Input
 }
+
 type Server struct {
 	charInputConn    *websocket.Conn
 	thingsUpdateConn *websocket.Conn
 	mapUpdateConn    *websocket.Conn
-	msgStore         *MessageStore
+	inputStore       *InputStore
 }
 
 var upgrader = websocket.Upgrader{
@@ -70,7 +74,7 @@ func New(port string) *Server {
 		charInputConn:    <-ch1,
 		thingsUpdateConn: <-ch2,
 		mapUpdateConn:    <-ch3,
-		msgStore:         &MessageStore{},
+		inputStore:       &InputStore{},
 	}
 
 	go s.ReceiveUpdates()
@@ -81,25 +85,34 @@ func New(port string) *Server {
 
 func (s *Server) ReceiveUpdates() {
 	for {
-		_, message, err := s.charInputConn.ReadMessage()
+		_, rawMessage, err := s.charInputConn.ReadMessage()
 		if err != nil {
 			log.Println(runtime.Caller(1))
 			log.Println(err)
 			log.Fatal()
 		}
 
-		s.msgStore.Lock()
-		s.msgStore.message = message
-		s.msgStore.Unlock()
+		var input models.Input
+		if err := json.Unmarshal(rawMessage, &input); err != nil {
+			continue
+		}
+
+		// Preserve Shoot: if new input has Shoot=false but previous had Shoot=true,
+		// keep Shoot=true so the shoot gets processed
+		oldShoot := s.inputStore.input.Shoot
+		newShoot := input.Shoot
+		input.Shoot = oldShoot || newShoot
+
+		s.inputStore.Lock()
+		s.inputStore.input = input
+		s.inputStore.Unlock()
 	}
 }
 
-func (s *Server) ReadMessage() []byte {
-	s.msgStore.Lock()
-	message := s.msgStore.message
-	s.msgStore.Unlock()
-
-	return message
+func (s *Server) ReadInput() models.Input {
+	s.inputStore.Lock()
+	defer s.inputStore.Unlock()
+	return s.inputStore.input
 }
 
 func (s *Server) WriteThingsMessage(message []byte) error {
