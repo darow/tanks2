@@ -13,8 +13,8 @@ import (
 
 	"myebiten/internal/models"
 	"myebiten/internal/weapons"
-	"myebiten/internal/websocket/client"
-	"myebiten/internal/websocket/server"
+	wsClient "myebiten/internal/websocket/client"
+	wsServer "myebiten/internal/websocket/server"
 	images "myebiten/resources"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -40,8 +40,8 @@ type MainScene struct {
 	pauseMenu    models.UIPanel  `json:"-"`
 
 	getConnectionMode func() string
-	getGameClient     func() *client.Client
-	getGameServer     func() *server.Server
+	getGameClient     func() *wsClient.Client
+	getGameServer     func() *wsServer.Server
 }
 
 func CreateMainScene() *MainScene {

@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	BULLET_SPEED  = 0.75 // 6 / 8 (4x then 2x slower)
+	BULLET_SPEED  = 1.15
 	BULLETS_COUNT = 5
 )
 

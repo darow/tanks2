@@ -7,9 +7,9 @@ import (
 )
 
 const (
-	CHARACTER_ROTATION_SPEED = 0.00625 // 0.05 / 8 (4x then 2x slower)
-	CHARACTER_SPEED          = 0.625  // 5 / 8
-	CHARACTER_WIDTH          = 70
+	CHARACTER_ROTATION_SPEED = 0.01
+	CHARACTER_SPEED          = 0.9
+	CHARACTER_WIDTH          = 60
 )
 
 type Weapon interface {
