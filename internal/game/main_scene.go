@@ -201,12 +201,12 @@ func (mainScene *MainScene) Update() error {
 		}
 
 		if i == 1 && connectionMode == CONNECTION_MODE_SERVER {
-			char.Input = server.ReadInput()
+			char.Input = server.GetInput()
 		} else {
 			char.Input.Update()
 		}
 
-		char.ProcessInput()
+		char.ProcessInput(server.SetInputShootFalse)
 
 		char.Move()
 

@@ -20,7 +20,7 @@ type Weapon interface {
 type Character struct {
 	GameObject
 	hitbox RectangleHitbox
-	sprite ImageSprite `json:"-"`
+	sprite ImageSprite
 	Input  Input
 	weapon Weapon
 }
@@ -29,7 +29,7 @@ func (c *Character) Draw(drawingArea *DrawingArea) {
 	c.sprite.Draw(c.Position.X, c.Position.Y, c.Rotation, drawingArea)
 }
 
-func (c *Character) ProcessInput() {
+func (c *Character) ProcessInput(setShootFalse func()) {
 	c.Speed.X = 0.0
 	c.Speed.Y = 0.0
 
@@ -55,6 +55,9 @@ func (c *Character) ProcessInput() {
 
 	if c.Input.Shoot {
 		c.Input.Shoot = false
+		if setShootFalse != nil {
+			setShootFalse()
+		}
 		sin, cos := math.Sincos(c.Rotation)
 		origin := Vector2D{
 			X: c.Position.X + cos*(float64(CHARACTER_WIDTH)/2+BULLET_RADIUS),

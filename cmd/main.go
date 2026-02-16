@@ -28,6 +28,10 @@ func main() {
 	flag.Parse()
 
 	ebiten.SetTPS(300)
+	if *CONNECTION_MODE == game.CONNECTION_MODE_CLIENT {
+		fmt.Println("Running in client mode")
+		ebiten.SetTPS(400)
+	}
 
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	outputFileName := fmt.Sprintf("%s.txt", *CONNECTION_MODE)

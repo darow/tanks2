@@ -109,10 +109,16 @@ func (s *Server) ReceiveUpdates() {
 	}
 }
 
-func (s *Server) ReadInput() models.Input {
+func (s *Server) GetInput() models.Input {
 	s.inputStore.Lock()
 	defer s.inputStore.Unlock()
 	return s.inputStore.input
+}
+
+func (s *Server) SetInputShootFalse() {
+	s.inputStore.Lock()
+	defer s.inputStore.Unlock()
+	s.inputStore.input.Shoot = false
 }
 
 func (s *Server) WriteThingsMessage(message []byte) error {
