@@ -52,20 +52,7 @@ func (rectangleSprite RectangleSprite) Draw(centerX, centerY, rotation float64, 
 	if rotation == 0.0 {
 		width, height = height, width
 	}
-	topLeftCorner := Vector2D{X: centerX - width/2, Y: centerY - height/2}
-
-	sc := drawingArea.Scale
-	offX := drawingArea.Offset.X
-	offY := drawingArea.Offset.Y
-
-	x := float32(topLeftCorner.X)*float32(sc) + float32(offX)
-	y := float32(topLeftCorner.Y)*float32(sc) + float32(offY)
-	w := float32(width) * float32(sc)
-	h := float32(height) * float32(sc)
-
-	image := drawingArea.BoardImage
-
-	vector.DrawFilledRect(image, x, y, w, h, color.Black, false)
+	drawFilledRect(drawingArea, centerX, centerY, width, height, color.Black)
 }
 
 type CircleSprite struct {
@@ -112,6 +99,21 @@ func (imageSprite ImageSprite) Draw(centerX, centerY, rotation float64, drawingA
 	image := drawingArea.BoardImage
 
 	image.DrawImage(imageSprite.Image, op)
+}
+
+func drawFilledRect(drawingArea *DrawingArea, centerX, centerY, width, height float64, fillColor color.Color) {
+	topLeftCorner := Vector2D{X: centerX - width/2, Y: centerY - height/2}
+
+	sc := drawingArea.Scale
+	offX := drawingArea.Offset.X
+	offY := drawingArea.Offset.Y
+
+	x := float32(topLeftCorner.X)*float32(sc) + float32(offX)
+	y := float32(topLeftCorner.Y)*float32(sc) + float32(offY)
+	w := float32(width) * float32(sc)
+	h := float32(height) * float32(sc)
+
+	vector.DrawFilledRect(drawingArea.BoardImage, x, y, w, h, fillColor, false)
 }
 
 type RectangleHitbox struct {

@@ -30,6 +30,7 @@ type MainScene struct {
 
 	Maze             [][]MazeNode
 	Bullets          []*models.Bullet
+	Items            []*models.Item `json:"-"`
 	Walls            []models.Wall
 	Characters       []*models.Character
 	CharactersScores []uint
@@ -372,6 +373,10 @@ func (mainScene *MainScene) SetDrawingSettings(h, w int) {
 		mainScene.AddObject(bullet, MAZE_AREA_ID)
 	}
 
+	for _, item := range mainScene.Items {
+		mainScene.AddObject(item, MAZE_AREA_ID)
+	}
+
 	for _, char := range mainScene.Characters {
 		mainScene.AddObject(char, MAZE_AREA_ID)
 	}
@@ -385,6 +390,11 @@ func (mainScene *MainScene) Reset() {
 	for _, bullet := range mainScene.Bullets {
 		bullet.SetActive(false)
 	}
+
+	for _, item := range mainScene.Items {
+		item.SetActive(false)
+	}
+	mainScene.Items = nil
 
 	for _, char := range mainScene.Characters {
 		char.SetActive(true)
@@ -404,7 +414,17 @@ func (mainScene *MainScene) Reset() {
 }
 
 func (mainScene *MainScene) SpawnItem() {
+	if len(mainScene.Maze) < 3 || len(mainScene.Maze[0]) < 3 {
+		return
+	}
 
+	i := rand.Intn(len(mainScene.Maze)-2) + 1
+	j := rand.Intn(len(mainScene.Maze[0])-2) + 1
+
+	position := getSceneCoordinates(i, j)
+	item := models.CreateItem(position, getRandomItemSprite())
+	mainScene.Items = append(mainScene.Items, item)
+	mainScene.AddObject(item, MAZE_AREA_ID)
 }
 
 func (mainScene *MainScene) CreateCharacter(id int) {
@@ -449,7 +469,7 @@ func (mainScene *MainScene) CreateCharacter(id int) {
 
 // debug function
 func (mainScene *MainScene) SanityCheck() {
-	if len(mainScene.Objects) != len(mainScene.Bullets)+len(mainScene.Characters)+len(mainScene.Walls)+2 {
+	if len(mainScene.Objects) != len(mainScene.Bullets)+len(mainScene.Items)+len(mainScene.Characters)+len(mainScene.Walls)+2 {
 		log.Println("discrepancy between the expected number of objects on the scene and actual number")
 	}
 

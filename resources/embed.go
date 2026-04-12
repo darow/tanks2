@@ -10,4 +10,13 @@ var (
 
 	//go:embed TankV2.png
 	TankV2png []byte
+
+	//go:embed explosion.png
+	ExplosionPng []byte
+
+	//go:embed minigun.png
+	MinigunPng []byte
+
+	//go:embed rocket.png
+	RocketPng []byte
 )
