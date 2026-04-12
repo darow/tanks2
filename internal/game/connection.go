@@ -6,8 +6,6 @@ import (
 	"runtime"
 
 	"myebiten/internal/models"
-	wsClient "myebiten/internal/websocket/client"
-	wsServer "myebiten/internal/websocket/server"
 )
 
 var (
@@ -21,7 +19,19 @@ type MazeDTO struct {
 	Walls []models.Wall
 }
 
-func (mainScene *MainScene) UpdateGameFromServer(client *wsClient.Client) {
+type connectionClient interface {
+	ReadMessage() []byte
+	WriteMessage(message []byte) error
+}
+
+type connectionServer interface {
+	GetInput() models.Input
+	SetInputShootFalse()
+	WriteThingsMessage(message []byte) error
+	WriteMapMessage(message []byte) error
+}
+
+func (mainScene *MainScene) UpdateGameFromServer(client connectionClient) {
 	msg := client.ReadMessage()
 
 	var newGame MainScene
@@ -125,7 +135,7 @@ func (mainScene *MainScene) ReceiveMazeUpdates() {
 	}
 }
 
-func SendMazeToClient(server *wsServer.Server, h, w int, walls []models.Wall) {
+func SendMazeToClient(server connectionServer, h, w int, walls []models.Wall) {
 	maze := MazeDTO{h, w, walls}
 
 	msg, err := json.Marshal(maze)
