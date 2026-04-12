@@ -206,7 +206,12 @@ func (mainScene *MainScene) Update() error {
 			char.Input.Update()
 		}
 
-		char.ProcessInput(server.SetInputShootFalse)
+		var setShootFalse func()
+		if connectionMode == CONNECTION_MODE_SERVER && server != nil {
+			setShootFalse = server.SetInputShootFalse
+		}
+
+		char.ProcessInput(setShootFalse)
 
 		char.Move()
 

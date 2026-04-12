@@ -116,6 +116,10 @@ func (s *Server) GetInput() models.Input {
 }
 
 func (s *Server) SetInputShootFalse() {
+	if s == nil || s.inputStore == nil {
+		return
+	}
+
 	s.inputStore.Lock()
 	defer s.inputStore.Unlock()
 	s.inputStore.input.Shoot = false
