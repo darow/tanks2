@@ -1,7 +1,5 @@
 package models
 
-const BULLET_RADIUS = 4
-
 type Bullet struct {
 	GameObject
 	Sprite CircleSprite

@@ -55,6 +55,9 @@ func (in *Input) Update() {
 	if inpututil.IsKeyJustPressed(in.ShootButton) {
 		in.Shoot = true
 	}
+	if in.Shoot && inpututil.IsKeyJustReleased(in.ShootButton) {
+		in.Shoot = false
+	}
 }
 
 func (in *Input) Reset() {

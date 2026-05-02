@@ -6,6 +6,7 @@ import (
 	"runtime"
 
 	"myebiten/internal/models"
+	"myebiten/internal/models/character"
 )
 
 var (
@@ -26,7 +27,6 @@ type connectionClient interface {
 
 type connectionServer interface {
 	GetInput() models.Input
-	SetInputShootFalse()
 	WriteThingsMessage(message []byte) error
 	WriteMapMessage(message []byte) error
 }
@@ -63,7 +63,7 @@ func (mainScene *MainScene) UpdateGameFromServer(client connectionClient) {
 // 	}
 // }
 
-func copyCharacters(dst []*models.Character, src []*models.Character) []*models.Character {
+func copyCharacters(dst []*character.Character, src []*character.Character) []*character.Character {
 	if len(dst) == 0 {
 		dst = append(dst, src...)
 	} else {

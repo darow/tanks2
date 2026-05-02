@@ -97,12 +97,6 @@ func (s *Server) ReceiveUpdates() {
 			continue
 		}
 
-		// Preserve Shoot: if new input has Shoot=false but previous had Shoot=true,
-		// keep Shoot=true so the shoot gets processed
-		oldShoot := s.inputStore.input.Shoot
-		newShoot := input.Shoot
-		input.Shoot = oldShoot || newShoot
-
 		s.inputStore.Lock()
 		s.inputStore.input = input
 		s.inputStore.Unlock()
@@ -113,16 +107,6 @@ func (s *Server) GetInput() models.Input {
 	s.inputStore.Lock()
 	defer s.inputStore.Unlock()
 	return s.inputStore.input
-}
-
-func (s *Server) SetInputShootFalse() {
-	if s == nil || s.inputStore == nil {
-		return
-	}
-
-	s.inputStore.Lock()
-	defer s.inputStore.Unlock()
-	s.inputStore.input.Shoot = false
 }
 
 func (s *Server) WriteThingsMessage(message []byte) error {

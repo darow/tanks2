@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"myebiten/internal/models"
+	"myebiten/internal/models/character"
 )
 
 func (mainScene *MainScene) Update() error {
@@ -44,10 +45,6 @@ func (mainScene *MainScene) updateClientFrame(client connectionClient) error {
 
 	if err := client.WriteMessage(msg); err != nil {
 		return err
-	}
-
-	if char.Input.Shoot {
-		char.Input.Shoot = false
 	}
 
 	mainScene.UpdateGameFromServer(client)
@@ -110,8 +107,6 @@ func (mainScene *MainScene) updateEndingState() {
 }
 
 func (mainScene *MainScene) updateCharacters(connectionMode string, server connectionServer) {
-	setShootFalse := mainScene.shootResetFunc(connectionMode, server)
-
 	for i, char := range mainScene.Characters {
 		if !char.IsActive() {
 			continue
@@ -123,18 +118,11 @@ func (mainScene *MainScene) updateCharacters(connectionMode string, server conne
 			char.Input.Update()
 		}
 
-		char.ProcessInput(setShootFalse)
+		char.ProcessInput()
 		char.Move()
 		mainScene.DetectCharacterToWallCollision(char)
+		mainScene.collectItems(char, i)
 	}
-}
-
-func (mainScene *MainScene) shootResetFunc(connectionMode string, server connectionServer) func() {
-	if connectionMode == CONNECTION_MODE_SERVER && server != nil {
-		return server.SetInputShootFalse
-	}
-
-	return nil
 }
 
 func (mainScene *MainScene) updateBullets() {
@@ -160,6 +148,17 @@ func (mainScene *MainScene) detectBulletHitsCharacters(bullet *models.Bullet) {
 			char.SetActive(false)
 			mainScene.leftAlive--
 		}
+	}
+}
+
+func (mainScene *MainScene) collectItems(char *character.Character, charIndex int) {
+	for _, item := range mainScene.Items {
+		if !item.DetectCharacterCollision(char) {
+			continue
+		}
+
+		item.SetActive(false)
+		mainScene.applyItemEffect(item, char, charIndex)
 	}
 }
 

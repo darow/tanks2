@@ -7,6 +7,7 @@ import (
 	"math/rand"
 
 	"myebiten/internal/models"
+	"myebiten/internal/models/item"
 	images "myebiten/resources"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -21,24 +22,26 @@ var itemSpriteBytes = [][]byte{
 	images.RocketPng,
 }
 
-var itemSprites []*models.ImageSprite
+type itemSprite struct {
+	itemType item.ItemType
+	sprite   *models.ImageSprite
+}
 
-func getRandomItemSprite() *models.ImageSprite {
+var itemSprites []itemSprite
+
+func getRandomItemSprite() (item.ItemType, *models.ImageSprite) {
 	if len(itemSprites) == 0 {
 		itemSprites = loadItemSprites()
 	}
 
-	if len(itemSprites) == 0 {
-		return nil
-	}
-
-	return itemSprites[rand.Intn(len(itemSprites))]
+	selected := itemSprites[rand.Intn(len(itemSprites))]
+	return selected.itemType, selected.sprite
 }
 
-func loadItemSprites() []*models.ImageSprite {
-	sprites := make([]*models.ImageSprite, 0, len(itemSpriteBytes))
+func loadItemSprites() []itemSprite {
+	sprites := make([]itemSprite, 0, len(itemSpriteBytes))
 
-	for _, raw := range itemSpriteBytes {
+	for idx, raw := range itemSpriteBytes {
 		img, _, err := image.Decode(bytes.NewReader(raw))
 		if err != nil {
 			log.Println(err)
@@ -46,7 +49,10 @@ func loadItemSprites() []*models.ImageSprite {
 		}
 
 		resized := resize.Resize(itemIconSize, 0, img, resize.Lanczos3)
-		sprite := &models.ImageSprite{Image: ebiten.NewImageFromImage(resized)}
+		sprite := itemSprite{
+			itemType: item.ItemType(idx),
+			sprite:   &models.ImageSprite{Image: ebiten.NewImageFromImage(resized)},
+		}
 		sprites = append(sprites, sprite)
 	}
 

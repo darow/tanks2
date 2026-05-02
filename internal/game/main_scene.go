@@ -10,6 +10,8 @@ import (
 	"time"
 
 	"myebiten/internal/models"
+	"myebiten/internal/models/character"
+	"myebiten/internal/models/item"
 	"myebiten/internal/weapons"
 	wsClient "myebiten/internal/websocket/client"
 	wsServer "myebiten/internal/websocket/server"
@@ -30,9 +32,10 @@ type MainScene struct {
 
 	Maze             [][]MazeNode
 	Bullets          []*models.Bullet
-	Items            []*models.Item `json:"-"`
+	Items            []*item.Item `json:"-"`
 	Walls            []models.Wall
-	Characters       []*models.Character
+	Characters       []*character.Character
+	defaultWeapons   []character.Weapon
 	CharactersScores []uint
 
 	scoreUITexts []models.UIText `json:"-"`
@@ -44,9 +47,9 @@ type MainScene struct {
 }
 
 func CreateMainScene() *MainScene {
-	bullets := make([]*models.Bullet, weapons.BULLETS_COUNT*4)
+	bullets := make([]*models.Bullet, weapons.DEFAULT_GUN_BULLETS_COUNT*PLAYERS_COUNT+weapons.MINIGUN_BULLETS_COUNT*PLAYERS_COUNT)
 	for i := range bullets {
-		bullets[i] = models.CreateBullet(models.BULLET_RADIUS)
+		bullets[i] = models.CreateBullet(weapons.DEFAULT_GUN_BULLET_RADIUS)
 	}
 
 	UIScore1 := models.CreateUIText("Player 1: 0", REGULAR_FONT)
@@ -130,7 +133,7 @@ func (mainScene *MainScene) updateScores(id int) {
 	mainScene.scoreUITexts[id].SetText(fmt.Sprintf("Player %d: %d", id+1, mainScene.CharactersScores[id]))
 }
 
-func (mainScene *MainScene) getClosestWalls(c *models.Character) []*models.Wall {
+func (mainScene *MainScene) getClosestWalls(c *character.Character) []*models.Wall {
 	// yes, this is shit, I see it too, dw it will all change
 	i, j := getMazeCoordinates(c.Position)
 	k := 0
@@ -190,7 +193,7 @@ func (mainScene *MainScene) getClosestWalls(c *models.Character) []*models.Wall 
 	return wallsToCheck[:k]
 }
 
-func (mainScene *MainScene) DetectCharacterToWallCollision(c *models.Character) {
+func (mainScene *MainScene) DetectCharacterToWallCollision(c *character.Character) {
 	closestWalls := mainScene.getClosestWalls(c)
 	for _, w := range closestWalls {
 		isCollide := c.DetectWallCollision(*w)
@@ -396,9 +399,10 @@ func (mainScene *MainScene) Reset() {
 	}
 	mainScene.Items = nil
 
-	for _, char := range mainScene.Characters {
+	for id, char := range mainScene.Characters {
 		char.SetActive(true)
 		char.Input.Reset()
+		char.SetWeapon(mainScene.defaultWeapons[id])
 	}
 
 	// This needs to be remade, quick solution
@@ -422,7 +426,8 @@ func (mainScene *MainScene) SpawnItem() {
 	j := rand.Intn(len(mainScene.Maze[0])-2) + 1
 
 	position := getSceneCoordinates(i, j)
-	item := models.CreateItem(position, getRandomItemSprite())
+	itemType, sprite := getRandomItemSprite()
+	item := item.CreateItem(itemType, position, sprite)
 	mainScene.Items = append(mainScene.Items, item)
 	mainScene.AddObject(item, MAZE_AREA_ID)
 }
@@ -432,7 +437,7 @@ func (mainScene *MainScene) CreateCharacter(id int) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	resizedCharacterImage := resize.Resize(models.CHARACTER_WIDTH, 0, CHARACTER_IMAGE_TO_RESIZE, resize.Lanczos3)
+	resizedCharacterImage := resize.Resize(character.CHARACTER_WIDTH, 0, CHARACTER_IMAGE_TO_RESIZE, resize.Lanczos3)
 	charImage := ebiten.NewImageFromImage(resizedCharacterImage)
 
 	var cs models.ControlSettings
@@ -456,12 +461,12 @@ func (mainScene *MainScene) CreateCharacter(id int) {
 		}
 	}
 
-	defaultWeapon := weapons.DefaultWeapon{
-		Clip:     models.CreatePool(mainScene.Bullets[id*weapons.BULLETS_COUNT : (id+1)*weapons.BULLETS_COUNT]),
-		Cooldown: 5,
-	}
+	clip := models.CreatePool(mainScene.Bullets[id*weapons.DEFAULT_GUN_BULLETS_COUNT : (id+1)*weapons.DEFAULT_GUN_BULLETS_COUNT])
+	defaultWeapon := weapons.NewDefaultWeapon(clip)
 
-	char := models.CreateCharacter(id, charImage, &defaultWeapon, cs)
+	mainScene.defaultWeapons = append(mainScene.defaultWeapons, defaultWeapon)
+
+	char := character.CreateCharacter(id, charImage, defaultWeapon, cs)
 	char.SetActive(true)
 	mainScene.Characters = append(mainScene.Characters, &char)
 	mainScene.AddObject(&char, MAZE_AREA_ID)

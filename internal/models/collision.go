@@ -27,7 +27,7 @@ func dot(a, b Vector2D) float64 {
 	return a.X*b.X + a.Y*b.Y
 }
 
-func getAxes(points []Vector2D) []Vector2D {
+func GetAxes(points []Vector2D) []Vector2D {
 	axes := []Vector2D{}
 	for i := 0; i < len(points); i++ {
 		p1 := points[i]
@@ -44,7 +44,7 @@ func getAxes(points []Vector2D) []Vector2D {
 	return axes
 }
 
-func projectPolygon(axis Vector2D, points []Vector2D) (float64, float64) {
+func ProjectPolygon(axis Vector2D, points []Vector2D) (float64, float64) {
 	min := dot(points[0], axis)
 	max := min
 	for _, p := range points[1:] {
@@ -59,10 +59,6 @@ func projectPolygon(axis Vector2D, points []Vector2D) (float64, float64) {
 	return min, max
 }
 
-func squareDistance(v Vector2D, w Vector2D) float64 {
+func SquareDistance(v Vector2D, w Vector2D) float64 {
 	return (v.X-w.X)*(v.X-w.X) + (v.Y-w.Y)*(v.Y-w.Y)
-}
-
-func overlap(minA, maxA, minB, maxB float64) bool {
-	return !(maxA < minB || maxB < minA)
 }
