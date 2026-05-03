@@ -3,7 +3,6 @@ package game
 import (
 	"encoding/json"
 	"log"
-	"runtime"
 
 	"myebiten/internal/models"
 	"myebiten/internal/models/character"
@@ -24,6 +23,7 @@ type MazeDTO struct {
 type connectionClient interface {
 	GetPlayerID() int
 	ReadMessage() []byte
+	ReadMapMessage() []byte
 	WriteMessage(message []byte) error
 }
 
@@ -156,35 +156,27 @@ func (mainScene *MainScene) copyItems(src []*modelitem.Item) []*modelitem.Item {
 	return dst
 }
 
-func (mainScene *MainScene) ReceiveMazeUpdates() {
-	client := mainScene.getGameClient()
-	for {
-		_, message, err := client.MapUpdateConn.ReadMessage()
-		if err != nil {
-			log.Println(runtime.Caller(1))
-			log.Println(err)
-		}
-
-		// if *DEBUG_MODE {
-		// 	log.Printf("Received map message: %s\n", message)
-		// }
-
-		var maze MazeDTO
-		err = json.Unmarshal(message, &maze)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		mainScene.Walls = maze.Walls
-
-		for i := range mainScene.Walls {
-			mainScene.Walls[i].Hitbox = models.RectangleHitbox{W: WALL_WIDTH, H: WALL_HEIGHT}
-			mainScene.Walls[i].Sprite = models.RectangleSprite{W: WALL_WIDTH, H: WALL_HEIGHT}
-		}
-
-		mainScene.Reset()
-		mainScene.SetDrawingSettings(maze.H, maze.W)
+func (mainScene *MainScene) UpdateMazeFromClient(client connectionClient) {
+	message := client.ReadMapMessage()
+	if len(message) == 0 {
+		return
 	}
+
+	var maze MazeDTO
+	err := json.Unmarshal(message, &maze)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	mainScene.Walls = maze.Walls
+
+	for i := range mainScene.Walls {
+		mainScene.Walls[i].Hitbox = models.RectangleHitbox{W: WALL_WIDTH, H: WALL_HEIGHT}
+		mainScene.Walls[i].Sprite = models.RectangleSprite{W: WALL_WIDTH, H: WALL_HEIGHT}
+	}
+
+	mainScene.Reset()
+	mainScene.SetDrawingSettings(maze.H, maze.W)
 }
 
 func SendMazeToClient(server connectionServer, h, w int, walls []models.Wall) {

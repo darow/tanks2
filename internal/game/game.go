@@ -88,7 +88,6 @@ func CreateGame(connectionMode, serverPort, address string, playersCount, player
 		game.server = server.New(serverPort, playersCount)
 	case CONNECTION_MODE_CLIENT:
 		game.client = client.New(address, normalizePlayerID(playerID, playersCount))
-		go mainScene.ReceiveMazeUpdates()
 	default:
 	}
 	game.connMode = connectionMode

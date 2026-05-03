@@ -470,10 +470,10 @@ func (mainScene *MainScene) CreateCharacter(id int) {
 func controlSettingsForPlayer(id int) models.ControlSettings {
 	controlSettings := []models.ControlSettings{
 		{
-			RotateRightButton:  ebiten.KeyF,
-			RotateLeftButton:   ebiten.KeyS,
-			MoveForwardButton:  ebiten.KeyE,
-			MoveBackwardButton: ebiten.KeyD,
+			RotateRightButton:  ebiten.KeyD,
+			RotateLeftButton:   ebiten.KeyA,
+			MoveForwardButton:  ebiten.KeyW,
+			MoveBackwardButton: ebiten.KeyS,
 			ShootButton:        ebiten.KeySpace,
 		},
 		{
@@ -504,6 +504,16 @@ func controlSettingsForPlayer(id int) models.ControlSettings {
 	}
 
 	return controlSettings[id%len(controlSettings)]
+}
+
+func clientControlSettings() models.ControlSettings {
+	return models.ControlSettings{
+		RotateRightButton:  ebiten.KeyD,
+		RotateLeftButton:   ebiten.KeyA,
+		MoveForwardButton:  ebiten.KeyW,
+		MoveBackwardButton: ebiten.KeyS,
+		ShootButton:        ebiten.KeySpace,
+	}
 }
 
 // debug function

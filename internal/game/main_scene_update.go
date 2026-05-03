@@ -40,6 +40,7 @@ func (mainScene *MainScene) updateClientFrame(client connectionClient) error {
 	}
 
 	char := mainScene.Characters[playerID]
+	char.Input.ControlSettings = clientControlSettings()
 
 	char.Input.Update()
 
@@ -52,6 +53,7 @@ func (mainScene *MainScene) updateClientFrame(client connectionClient) error {
 		return err
 	}
 
+	mainScene.UpdateMazeFromClient(client)
 	mainScene.UpdateGameFromServer(client)
 	return nil
 }
@@ -117,9 +119,9 @@ func (mainScene *MainScene) updateCharacters(connectionMode string, server conne
 			continue
 		}
 
-		if connectionMode == CONNECTION_MODE_SERVER {
+		if connectionMode == CONNECTION_MODE_SERVER && i > 0 {
 			char.Input = server.GetInput(i)
-		} else if i == normalizePlayerID() {
+		} else {
 			char.Input.Update()
 		}
 

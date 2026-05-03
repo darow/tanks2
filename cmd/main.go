@@ -36,7 +36,7 @@ func main() {
 	}
 
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
-	outputFileName := fmt.Sprintf("%s.txt", *CONNECTION_MODE)
+	outputFileName := fmt.Sprintf("%s%d.txt", *CONNECTION_MODE, *PLAYER_ID)
 	f, err := os.Create(outputFileName)
 	if err != nil {
 		log.Fatal(err)
