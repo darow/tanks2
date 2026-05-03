@@ -19,17 +19,16 @@ type MinigunWeapon struct {
 }
 
 const (
-	minigunWarmup           = 500 * time.Millisecond
-	MINIGUN_BULLETS_COUNT   = 30
-	minigunDispersionDegree = 10.0
-	minigunHoldTimeout      = 100 * time.Millisecond
+	MINIGUN_WARMUP            = 500 * time.Millisecond
+	MINIGUN_BULLETS_COUNT     = 30
+	MINIGUN_DISPERSION_DEGREE = 10.0
+	MINIGUN_COOLDOWN          = 100 * time.Millisecond
 )
 
 func NewMinigunWeapon(clip models.Pool[*models.Bullet]) *MinigunWeapon {
 	return &MinigunWeapon{
 		DefaultWeapon: DefaultWeapon{
 			Clip:         clip,
-			Cooldown:     150 * time.Millisecond,
 			BulletRadius: 2,
 			BulletSpeed:  DEFAULT_GUN_BULLET_SPEED * 1.1,
 		},
@@ -38,7 +37,7 @@ func NewMinigunWeapon(clip models.Pool[*models.Bullet]) *MinigunWeapon {
 
 func (mw *MinigunWeapon) Shoot(origin models.Vector2D, rotation float64) {
 	mw.mu.Lock()
-	mw.shootHeldTill = time.Now().Add(minigunHoldTimeout)
+	mw.shootHeldTill = time.Now().Add(MINIGUN_COOLDOWN)
 	mw.origin = origin
 	mw.rotation = rotation
 	if mw.isShooting {
@@ -59,7 +58,7 @@ func (mw *MinigunWeapon) IsShooting() bool {
 }
 
 func (mw *MinigunWeapon) fireBurst(origin models.Vector2D, rotation float64) {
-	timer := time.NewTimer(minigunWarmup)
+	timer := time.NewTimer(MINIGUN_WARMUP)
 	defer timer.Stop()
 
 	<-timer.C
@@ -76,7 +75,7 @@ func (mw *MinigunWeapon) fireBurst(origin models.Vector2D, rotation float64) {
 		}
 		mw.mu.Unlock()
 
-		dispersion := (rand.Float64()*2 - 1) * minigunDispersionDegree * math.Pi / 180
+		dispersion := (rand.Float64()*2 - 1) * MINIGUN_DISPERSION_DEGREE * math.Pi / 180
 		mw.spawnBullet(origin, rotation+dispersion)
 
 		time.Sleep(mw.Cooldown)

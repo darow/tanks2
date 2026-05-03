@@ -29,15 +29,6 @@ type itemSprite struct {
 
 var itemSprites []itemSprite
 
-func getRandomItemSprite() (item.ItemType, *models.ImageSprite) {
-	if len(itemSprites) == 0 {
-		itemSprites = loadItemSprites()
-	}
-
-	selected := itemSprites[rand.Intn(len(itemSprites))]
-	return selected.itemType, selected.sprite
-}
-
 func loadItemSprites() []itemSprite {
 	sprites := make([]itemSprite, 0, len(itemSpriteBytes))
 
@@ -57,4 +48,27 @@ func loadItemSprites() []itemSprite {
 	}
 
 	return sprites
+}
+
+func getItemSprite(itemType item.ItemType) *models.ImageSprite {
+	if len(itemSprites) == 0 {
+		itemSprites = loadItemSprites()
+	}
+
+	for _, itemSprite := range itemSprites {
+		if itemSprite.itemType == itemType {
+			return itemSprite.sprite
+		}
+	}
+
+	return nil
+}
+
+func getRandomItemSprite() (item.ItemType, *models.ImageSprite) {
+	if len(itemSprites) == 0 {
+		itemSprites = loadItemSprites()
+	}
+
+	selected := itemSprites[rand.Intn(len(itemSprites))]
+	return selected.itemType, selected.sprite
 }

@@ -16,7 +16,7 @@ const (
 	PLAYERS_COUNT = 2
 
 	STATE_GAME_ENDING_TIMER_SECONDS = 1
-	ITEM_SPAWN_INTERVAL             = 1
+	ITEM_SPAWN_INTERVAL             = 4
 )
 
 var (

@@ -7,6 +7,7 @@ import (
 
 	"myebiten/internal/models"
 	"myebiten/internal/models/character"
+	modelitem "myebiten/internal/models/item"
 )
 
 var (
@@ -47,7 +48,7 @@ func (mainScene *MainScene) UpdateGameFromServer(client connectionClient) {
 
 	mainScene.Characters = copyCharacters(mainScene.Characters, newGame.Characters)
 	mainScene.Bullets = copyBullets(mainScene.Bullets, newGame.Bullets)
-	mainScene.Items = newGame.Items
+	mainScene.Items = mainScene.copyItems(newGame.Items)
 	mainScene.CharactersScores = newGame.CharactersScores
 }
 
@@ -96,8 +97,49 @@ func copyBullets(dst []*models.Bullet, src []*models.Bullet) []*models.Bullet {
 			bullet.Position.X = b.Position.X
 			bullet.Position.Y = b.Position.Y
 			bullet.Rotation = b.Rotation
+			bullet.Sprite.R = b.Sprite.R
 
 			bullet.SetActive(b.IsActive())
+		}
+	}
+
+	return dst
+}
+
+func (mainScene *MainScene) copyItems(src []*modelitem.Item) []*modelitem.Item {
+	for i := len(src); i < len(mainScene.Items); i++ {
+		if mainScene.Items[i] != nil {
+			mainScene.Items[i].SetActive(false)
+		}
+	}
+
+	dst := mainScene.Items
+	if len(dst) < len(src) {
+		dst = append(dst, make([]*modelitem.Item, len(src)-len(dst))...)
+	}
+	dst = dst[:len(src)]
+
+	for i, srcItem := range src {
+		if srcItem == nil {
+			if dst[i] != nil {
+				dst[i].SetActive(false)
+			}
+			continue
+		}
+
+		if dst[i] == nil {
+			dst[i] = &modelitem.Item{}
+			mainScene.AddObject(dst[i], MAZE_AREA_ID)
+		}
+
+		dstItem := dst[i]
+		dstItem.GameObject = srcItem.GameObject
+		dstItem.Type = srcItem.Type
+
+		if dstItem.IsActive() && dstItem.IconSprite.Image == nil {
+			if sprite := getItemSprite(dstItem.Type); sprite != nil {
+				dstItem.IconSprite = *sprite
+			}
 		}
 	}
 

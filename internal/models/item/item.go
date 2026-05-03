@@ -18,7 +18,7 @@ const (
 type Item struct {
 	models.GameObject
 	Type       ItemType
-	IconSprite models.ImageSprite
+	IconSprite models.ImageSprite `json:"-"`
 }
 
 func (item *Item) Draw(drawingArea *models.DrawingArea) {
