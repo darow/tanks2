@@ -70,5 +70,10 @@ func getRandomItemSprite() (item.ItemType, *models.ImageSprite) {
 	}
 
 	selected := itemSprites[rand.Intn(len(itemSprites))]
+
+	//TODO: REMOVE THIS LINES TO SPAWN OTHER ITEM TYPES
+	selected.itemType = item.TypeMinigun
+	selected.sprite = getItemSprite(item.TypeMinigun)
+
 	return selected.itemType, selected.sprite
 }

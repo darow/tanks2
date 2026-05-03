@@ -29,6 +29,7 @@ func NewMinigunWeapon(clip models.Pool[*models.Bullet]) *MinigunWeapon {
 	return &MinigunWeapon{
 		DefaultWeapon: DefaultWeapon{
 			Clip:         clip,
+			Cooldown:     MINIGUN_COOLDOWN,
 			BulletRadius: 2,
 			BulletSpeed:  DEFAULT_GUN_BULLET_SPEED * 1.1,
 		},
