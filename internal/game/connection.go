@@ -22,12 +22,13 @@ type MazeDTO struct {
 }
 
 type connectionClient interface {
+	GetPlayerID() int
 	ReadMessage() []byte
 	WriteMessage(message []byte) error
 }
 
 type connectionServer interface {
-	GetInput() models.Input
+	GetInput(playerID int) models.Input
 	WriteThingsMessage(message []byte) error
 	WriteMapMessage(message []byte) error
 }
@@ -50,6 +51,7 @@ func (mainScene *MainScene) UpdateGameFromServer(client connectionClient) {
 	mainScene.Bullets = copyBullets(mainScene.Bullets, newGame.Bullets)
 	mainScene.Items = mainScene.copyItems(newGame.Items)
 	mainScene.CharactersScores = newGame.CharactersScores
+	mainScene.syncScoreUITexts()
 }
 
 // func (c *Character) SendInputToServer(ws *websocket.Conn) {
@@ -69,6 +71,10 @@ func copyCharacters(dst []*character.Character, src []*character.Character) []*c
 		dst = append(dst, src...)
 	} else {
 		for i, char := range src {
+			if i >= len(dst) {
+				break
+			}
+
 			c := dst[i]
 			if char == nil {
 				c.Position.X = 99999
@@ -92,6 +98,10 @@ func copyBullets(dst []*models.Bullet, src []*models.Bullet) []*models.Bullet {
 		dst = append(dst, src...)
 	} else {
 		for i, b := range src {
+			if i >= len(dst) {
+				break
+			}
+
 			bullet := dst[i]
 
 			bullet.Position.X = b.Position.X

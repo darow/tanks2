@@ -27,8 +27,9 @@ type MainScene struct {
 	stateEndingTimer *time.Timer
 	itemSpawnTicker  *time.Ticker
 
-	state     int
-	leftAlive int
+	PlayersCount int
+	state        int
+	leftAlive    int
 
 	Maze             [][]MazeNode
 	Bullets          []*models.Bullet
@@ -38,31 +39,33 @@ type MainScene struct {
 	defaultWeapons   []character.Weapon
 	CharactersScores []uint
 
-	scoreUITexts []models.UIText `json:"-"`
-	pauseMenu    models.UIPanel  `json:"-"`
+	ScoreUITexts []models.UIText
+	pauseMenu    models.UIPanel `json:"-"`
 
 	getConnectionMode func() string
 	getGameClient     func() *wsClient.Client
 	getGameServer     func() *wsServer.Server
 }
 
-func CreateMainScene() *MainScene {
-	bullets := make([]*models.Bullet, weapons.DEFAULT_GUN_BULLETS_COUNT*PLAYERS_COUNT+weapons.MINIGUN_BULLETS_COUNT*PLAYERS_COUNT)
+func CreateMainScene(playersCount int) *MainScene {
+	bullets := make([]*models.Bullet, weapons.DEFAULT_GUN_BULLETS_COUNT*playersCount+weapons.MINIGUN_BULLETS_COUNT*playersCount)
 	for i := range bullets {
 		bullets[i] = models.CreateBullet(weapons.DEFAULT_GUN_BULLET_RADIUS)
 	}
 
-	UIScore1 := models.CreateUIText("Player 1: 0", REGULAR_FONT)
-	UIScore2 := models.CreateUIText("Player 2: 0", REGULAR_FONT)
-	UIScores := []models.UIText{UIScore1, UIScore2}
+	UIScores := make([]models.UIText, playersCount)
+	for i := range UIScores {
+		UIScores[i] = models.CreateUIText(fmt.Sprintf("Player %d: 0", i+1), REGULAR_FONT)
+	}
 
 	mainSceneUI := buildMainSceneUI(UIScores)
 	return &MainScene{
 		SceneUI:          mainSceneUI,
 		state:            STATE_MAZE_CREATING,
-		scoreUITexts:     UIScores,
+		ScoreUITexts:     UIScores,
 		Bullets:          bullets,
-		CharactersScores: []uint{0, 0},
+		CharactersScores: make([]uint, playersCount),
+		PlayersCount:     playersCount,
 	}
 }
 
@@ -100,37 +103,48 @@ func buildMainSceneUI(scores []models.UIText) models.SceneUI {
 		})
 	scene.AddDrawingArea(SCORE_AREA_ID, ScoreArea)
 
-	scoreArea1 := ScoreArea.NewArea(
-		0.99*ScoreArea.Height,
-		0.2*ScoreArea.Width,
-		models.DrawingSettings{
-			Offset: models.Vector2D{X: 0.2 * ScoreArea.Width, Y: 0.5 * ScoreArea.Height},
-			Scale:  1.0,
-		})
-	scene.AddDrawingArea(SCORE_AREA_1_ID, scoreArea1)
-
-	scoreArea2 := ScoreArea.NewArea(
-		0.99*ScoreArea.Height,
-		0.2*ScoreArea.Width,
-		models.DrawingSettings{
-			Offset: models.Vector2D{X: 0.6 * ScoreArea.Width, Y: 0.5 * ScoreArea.Height},
-			Scale:  1.0,
-		})
-	scene.AddDrawingArea(SCORE_AREA_2_ID, scoreArea2)
-
-	scoreAreaIDs := []string{SCORE_AREA_1_ID, SCORE_AREA_2_ID}
 	for i := range scores {
+		areaID := scoreAreaID(i)
+		scoreArea := ScoreArea.NewArea(
+			0.99*ScoreArea.Height,
+			ScoreArea.Width/float64(len(scores)),
+			models.DrawingSettings{
+				Offset: models.Vector2D{
+					X: (float64(i) + 0.5) * ScoreArea.Width / float64(len(scores)),
+					Y: 0.5 * ScoreArea.Height,
+				},
+				Scale: 1.0,
+			})
+		scene.AddDrawingArea(areaID, scoreArea)
+
 		scoreUI := &scores[i]
 		scoreUI.SetActive(true)
-		scene.AddObject(scoreUI, scoreAreaIDs[i])
+		scene.AddObject(scoreUI, areaID)
 	}
 
 	return scene
 }
 
 func (mainScene *MainScene) updateScores(id int) {
+	if id < 0 || id >= len(mainScene.CharactersScores) || id >= len(mainScene.ScoreUITexts) {
+		return
+	}
+
 	mainScene.CharactersScores[id]++
-	mainScene.scoreUITexts[id].SetText(fmt.Sprintf("Player %d: %d", id+1, mainScene.CharactersScores[id]))
+	mainScene.ScoreUITexts[id].SetText(fmt.Sprintf("Player %d: %d", id+1, mainScene.CharactersScores[id]))
+}
+
+func (mainScene *MainScene) syncScoreUITexts() {
+	for i := range mainScene.ScoreUITexts {
+		if i >= len(mainScene.CharactersScores) {
+			break
+		}
+		mainScene.ScoreUITexts[i].SetText(fmt.Sprintf("Player %d: %d", i+1, mainScene.CharactersScores[i]))
+	}
+}
+
+func scoreAreaID(index int) string {
+	return fmt.Sprintf("%s_%d", SCORE_AREA_ID, index+1)
 }
 
 func (mainScene *MainScene) getClosestWalls(c *character.Character) []*models.Wall {
@@ -406,7 +420,7 @@ func (mainScene *MainScene) Reset() {
 	}
 
 	// This needs to be remade, quick solution
-	mainScene.Objects = mainScene.Objects[:2] //len(g.activeScene.Objects)-len(g.Walls)]
+	mainScene.Objects = mainScene.Objects[:len(mainScene.ScoreUITexts)] //len(g.activeScene.Objects)-len(g.Walls)]
 	am := mainScene.AreaIDs
 	for obj, id := range am {
 		if id == MAZE_AREA_ID {
@@ -440,26 +454,7 @@ func (mainScene *MainScene) CreateCharacter(id int) {
 	resizedCharacterImage := resize.Resize(character.CHARACTER_WIDTH, 0, CHARACTER_IMAGE_TO_RESIZE, resize.Lanczos3)
 	charImage := ebiten.NewImageFromImage(resizedCharacterImage)
 
-	var cs models.ControlSettings
-	switch id {
-	case 0:
-		cs = models.ControlSettings{
-			RotateRightButton:  ebiten.KeyF,
-			RotateLeftButton:   ebiten.KeyS,
-			MoveForwardButton:  ebiten.KeyE,
-			MoveBackwardButton: ebiten.KeyD,
-			ShootButton:        ebiten.KeySpace,
-		}
-
-	case 1:
-		cs = models.ControlSettings{
-			RotateRightButton:  ebiten.KeyArrowRight,
-			RotateLeftButton:   ebiten.KeyArrowLeft,
-			MoveForwardButton:  ebiten.KeyArrowUp,
-			MoveBackwardButton: ebiten.KeyArrowDown,
-			ShootButton:        ebiten.KeySlash,
-		}
-	}
+	cs := controlSettingsForPlayer(id)
 
 	clip := models.CreatePool(mainScene.Bullets[id*weapons.DEFAULT_GUN_BULLETS_COUNT : (id+1)*weapons.DEFAULT_GUN_BULLETS_COUNT])
 	defaultWeapon := weapons.NewDefaultWeapon(clip)
@@ -472,9 +467,48 @@ func (mainScene *MainScene) CreateCharacter(id int) {
 	mainScene.AddObject(&char, MAZE_AREA_ID)
 }
 
+func controlSettingsForPlayer(id int) models.ControlSettings {
+	controlSettings := []models.ControlSettings{
+		{
+			RotateRightButton:  ebiten.KeyF,
+			RotateLeftButton:   ebiten.KeyS,
+			MoveForwardButton:  ebiten.KeyE,
+			MoveBackwardButton: ebiten.KeyD,
+			ShootButton:        ebiten.KeySpace,
+		},
+		{
+			RotateRightButton:  ebiten.KeyArrowRight,
+			RotateLeftButton:   ebiten.KeyArrowLeft,
+			MoveForwardButton:  ebiten.KeyArrowUp,
+			MoveBackwardButton: ebiten.KeyArrowDown,
+			ShootButton:        ebiten.KeySlash,
+		},
+		{
+			RotateRightButton:  ebiten.KeyL,
+			RotateLeftButton:   ebiten.KeyJ,
+			MoveForwardButton:  ebiten.KeyI,
+			MoveBackwardButton: ebiten.KeyK,
+			ShootButton:        ebiten.KeyO,
+		},
+		{
+			RotateRightButton:  ebiten.KeyNumpad6,
+			RotateLeftButton:   ebiten.KeyNumpad4,
+			MoveForwardButton:  ebiten.KeyNumpad8,
+			MoveBackwardButton: ebiten.KeyNumpad5,
+			ShootButton:        ebiten.KeyNumpad0,
+		},
+	}
+
+	if id < len(controlSettings) {
+		return controlSettings[id]
+	}
+
+	return controlSettings[id%len(controlSettings)]
+}
+
 // debug function
 func (mainScene *MainScene) SanityCheck() {
-	if len(mainScene.Objects) != len(mainScene.Bullets)+len(mainScene.Items)+len(mainScene.Characters)+len(mainScene.Walls)+2 {
+	if len(mainScene.Objects) != len(mainScene.Bullets)+len(mainScene.Items)+len(mainScene.Characters)+len(mainScene.Walls)+len(mainScene.ScoreUITexts) {
 		log.Println("discrepancy between the expected number of objects on the scene and actual number")
 	}
 

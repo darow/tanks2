@@ -13,7 +13,8 @@ import (
 )
 
 const (
-	PLAYERS_COUNT = 2
+	DEFAULT_PLAYERS_COUNT = 2
+	MAX_PLAYERS_COUNT     = 10
 
 	STATE_GAME_ENDING_TIMER_SECONDS = 1
 	ITEM_SPAWN_INTERVAL             = 4
@@ -45,10 +46,6 @@ const (
 	MAZE_AREA_ID         = "maze_area"
 	UI_AREA1_ID          = "ui_area_1"
 	SCORE_AREA_ID        = "score_area"
-	SCORE_AREA_1_ID      = "score_area_1"
-	SCORE_AREA_2_ID      = "score_area_2"
-	SCORE_AREA_3_ID      = "score_area_3"
-	SCORE_AREA_4_ID      = "score_area_4"
 )
 
 var noChars = true // zaglushka
@@ -59,20 +56,22 @@ var (
 )
 
 type Game struct {
-	server   *server.Server
-	client   *client.Client
-	connMode string
+	server       *server.Server
+	client       *client.Client
+	connMode     string
+	playersCount int
 
 	scenes      map[int]models.Scene `json:"-"`
 	activeScene models.Scene         `json:"-"`
 }
 
-func CreateGame(connectionMode, serverPort, address string) *Game {
-	game := Game{}
+func CreateGame(connectionMode, serverPort, address string, playersCount, playerID int) *Game {
+	playersCount = normalizePlayersCount(playersCount)
+	game := Game{playersCount: playersCount}
 
 	menuScene := &LobbyScene{}
 	lobbyScene := &LobbyScene{}
-	mainScene := CreateMainScene()
+	mainScene := CreateMainScene(playersCount)
 
 	mainScene.getConnectionMode = game.getConnectionMode
 	mainScene.getGameClient = game.getClient
@@ -86,9 +85,9 @@ func CreateGame(connectionMode, serverPort, address string) *Game {
 
 	switch connectionMode {
 	case CONNECTION_MODE_SERVER:
-		game.server = server.New(serverPort)
+		game.server = server.New(serverPort, playersCount)
 	case CONNECTION_MODE_CLIENT:
-		game.client = client.New(address)
+		game.client = client.New(address, normalizePlayerID(playerID, playersCount))
 		go mainScene.ReceiveMazeUpdates()
 	default:
 	}
@@ -106,8 +105,9 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 func (g *Game) Update() error {
 	// Zaglushka
 	if noChars {
-		g.CreateCharacter(0)
-		g.CreateCharacter(1)
+		for id := 0; id < g.playersCount; id++ {
+			g.CreateCharacter(id)
+		}
 		noChars = false
 	}
 	return g.activeScene.Update()
@@ -138,4 +138,24 @@ func (g *Game) CreateCharacter(id int) {
 
 func (g *Game) SetActiveScene(sceneID int) {
 	g.activeScene = g.scenes[sceneID]
+}
+
+func normalizePlayersCount(playersCount int) int {
+	if playersCount < DEFAULT_PLAYERS_COUNT {
+		return DEFAULT_PLAYERS_COUNT
+	}
+	if playersCount > MAX_PLAYERS_COUNT {
+		return MAX_PLAYERS_COUNT
+	}
+	return playersCount
+}
+
+func normalizePlayerID(playerID, playersCount int) int {
+	if playerID <= 0 {
+		return 1
+	}
+	if playerID >= playersCount {
+		return playersCount - 1
+	}
+	return playerID
 }

@@ -22,21 +22,21 @@ func (uiElem *UIElement) SetActive(b bool) {
 type UIText struct {
 	UIElement
 	font font.Face
-	text string
+	Text string
 }
 
 func (uiText UIText) Draw(drawingArea *DrawingArea) {
-	text.Draw(drawingArea.BoardImage, uiText.text, uiText.font, int(drawingArea.Offset.X), int(drawingArea.Offset.Y), color.Black)
+	text.Draw(drawingArea.BoardImage, uiText.Text, uiText.font, int(drawingArea.Offset.X), int(drawingArea.Offset.Y), color.Black)
 }
 
 func (uiText *UIText) SetText(newText string) {
-	uiText.text = newText
+	uiText.Text = newText
 }
 
 func CreateUIText(s string, font font.Face) UIText {
 	return UIText{
 		font: font,
-		text: s,
+		Text: s,
 	}
 }
 

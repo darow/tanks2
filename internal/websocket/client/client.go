@@ -19,22 +19,23 @@ type Client struct {
 	thingsUpdateConn *websocket.Conn
 	MapUpdateConn    *websocket.Conn
 	msgStore         *MessageStore
+	playerID         int
 }
 
-func New(hostAddress string) *Client {
-	address := fmt.Sprintf("ws://%s/ws1", hostAddress)
+func New(hostAddress string, playerID int) *Client {
+	address := fmt.Sprintf("ws://%s/ws1?player_id=%d", hostAddress, playerID)
 	charInputConn, _, err := websocket.DefaultDialer.Dial(address, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	address = fmt.Sprintf("ws://%s/ws2", hostAddress)
+	address = fmt.Sprintf("ws://%s/ws2?player_id=%d", hostAddress, playerID)
 	thingsUpdateConn, _, err := websocket.DefaultDialer.Dial(address, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	address = fmt.Sprintf("ws://%s/ws3", hostAddress)
+	address = fmt.Sprintf("ws://%s/ws3?player_id=%d", hostAddress, playerID)
 	mapUpdateConn, _, err := websocket.DefaultDialer.Dial(address, nil)
 	if err != nil {
 		log.Fatal(err)
@@ -45,6 +46,7 @@ func New(hostAddress string) *Client {
 		thingsUpdateConn: thingsUpdateConn,
 		MapUpdateConn:    mapUpdateConn,
 		msgStore:         &MessageStore{},
+		playerID:         playerID,
 	}
 	go c.ReceiveUpdates()
 
@@ -79,4 +81,8 @@ func (c *Client) WriteMessage(message []byte) error {
 	}
 
 	return nil
+}
+
+func (c *Client) GetPlayerID() int {
+	return c.playerID
 }

@@ -24,8 +24,8 @@ func (mainScene *MainScene) applyExplosion(char *character.Character, charIndex 
 }
 
 func (mainScene *MainScene) applyMinigun(char *character.Character) {
-	start := weapons.DEFAULT_GUN_BULLETS_COUNT*PLAYERS_COUNT + char.ID*weapons.MINIGUN_BULLETS_COUNT
-	end := weapons.DEFAULT_GUN_BULLETS_COUNT*PLAYERS_COUNT + (char.ID+1)*weapons.MINIGUN_BULLETS_COUNT
+	start := weapons.DEFAULT_GUN_BULLETS_COUNT*mainScene.PlayersCount + char.ID*weapons.MINIGUN_BULLETS_COUNT
+	end := weapons.DEFAULT_GUN_BULLETS_COUNT*mainScene.PlayersCount + (char.ID+1)*weapons.MINIGUN_BULLETS_COUNT
 	clip := models.CreatePool(mainScene.Bullets[start:end])
 
 	char.SetWeapon(weapons.NewMinigunWeapon(clip))

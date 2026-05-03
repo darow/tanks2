@@ -34,7 +34,12 @@ func (mainScene *MainScene) Update() error {
 }
 
 func (mainScene *MainScene) updateClientFrame(client connectionClient) error {
-	char := mainScene.Characters[0]
+	playerID := client.GetPlayerID()
+	if playerID < 0 || playerID >= len(mainScene.Characters) {
+		return errors.New("client player id is outside characters list")
+	}
+
+	char := mainScene.Characters[playerID]
 
 	char.Input.Update()
 
@@ -75,7 +80,7 @@ func (mainScene *MainScene) startNewRound(connectionMode string, server connecti
 		SendMazeToClient(server, h, w, walls)
 	}
 
-	mainScene.leftAlive = 2
+	mainScene.leftAlive = len(mainScene.Characters)
 	mainScene.state = STATE_GAME_RUNNING
 	mainScene.SanityCheck()
 }
@@ -112,9 +117,9 @@ func (mainScene *MainScene) updateCharacters(connectionMode string, server conne
 			continue
 		}
 
-		if i == 1 && connectionMode == CONNECTION_MODE_SERVER {
-			char.Input = server.GetInput()
-		} else {
+		if connectionMode == CONNECTION_MODE_SERVER {
+			char.Input = server.GetInput(i)
+		} else if i == normalizePlayerID() {
 			char.Input.Update()
 		}
 
