@@ -51,6 +51,13 @@ func (mw *MinigunWeapon) Shoot(origin models.Vector2D, rotation float64) {
 	go mw.fireBurst(origin, rotation)
 }
 
+func (mw *MinigunWeapon) IsShooting() bool {
+	mw.mu.Lock()
+	defer mw.mu.Unlock()
+
+	return mw.isShooting
+}
+
 func (mw *MinigunWeapon) fireBurst(origin models.Vector2D, rotation float64) {
 	timer := time.NewTimer(minigunWarmup)
 	defer timer.Stop()

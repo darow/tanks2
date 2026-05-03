@@ -19,12 +19,18 @@ type Weapon interface {
 	Shoot(origin models.Vector2D, rotation float64)
 }
 
+type shootingStateWeapon interface {
+	IsShooting() bool
+}
+
 type Character struct {
 	models.GameObject
-	hitbox models.RectangleHitbox
-	sprite models.ImageSprite
-	Input  models.Input
-	weapon Weapon
+	hitbox                     models.RectangleHitbox
+	sprite                     models.ImageSprite
+	Input                      models.Input
+	weapon                     Weapon
+	defaultWeapon              Weapon
+	defaultWeaponSwitchPending bool
 }
 
 func (c *Character) Draw(drawingArea *models.DrawingArea) {
@@ -37,9 +43,15 @@ func (c *Character) SetWeapon(weapon Weapon) {
 	}
 
 	c.weapon = weapon
+	c.defaultWeaponSwitchPending = false
+	if isDefaultWeapon(weapon) {
+		c.defaultWeapon = weapon
+	}
 }
 
 func (c *Character) ProcessInput() {
+	c.switchToDefaultWeaponIfReady()
+
 	c.Speed.X = 0.0
 	c.Speed.Y = 0.0
 
@@ -71,7 +83,44 @@ func (c *Character) ProcessInput() {
 		}
 
 		c.weapon.Shoot(origin, c.Rotation)
+		c.switchToDefaultWeaponAfterShot()
 	}
+}
+
+func (c *Character) switchToDefaultWeaponAfterShot() {
+	if c.defaultWeapon == nil || isDefaultWeapon(c.weapon) || c.defaultWeaponSwitchPending {
+		return
+	}
+
+	if stateWeapon, ok := c.weapon.(shootingStateWeapon); ok && stateWeapon.IsShooting() {
+		c.defaultWeaponSwitchPending = true
+		return
+	}
+
+	c.SwitchToDefaultWeapon()
+}
+
+func (c *Character) SwitchToDefaultWeapon() {
+	c.weapon = c.defaultWeapon
+}
+
+func isDefaultWeapon(weapon Weapon) bool {
+	_, ok := weapon.(*weapons.DefaultWeapon)
+	return ok
+}
+
+func (c *Character) switchToDefaultWeaponIfReady() {
+	if !c.defaultWeaponSwitchPending {
+		return
+	}
+
+	stateWeapon, ok := c.weapon.(shootingStateWeapon)
+	if ok && stateWeapon.IsShooting() {
+		return
+	}
+
+	c.weapon = c.defaultWeapon
+	c.defaultWeaponSwitchPending = false
 }
 
 func (c *Character) getCorners() []models.Vector2D {
@@ -140,9 +189,10 @@ func CreateCharacter(id int, charImage *ebiten.Image, weapon Weapon, controlSett
 	return Character{
 		GameObject: models.GameObject{ID: id},
 
-		hitbox: models.RectangleHitbox{H: float64(CHARACTER_WIDTH), W: float64(CHARACTER_WIDTH)},
-		sprite: models.ImageSprite{Image: charImage},
-		weapon: weapon,
+		hitbox:        models.RectangleHitbox{H: float64(CHARACTER_WIDTH), W: float64(CHARACTER_WIDTH)},
+		sprite:        models.ImageSprite{Image: charImage},
+		weapon:        weapon,
+		defaultWeapon: weapon,
 		Input: models.Input{
 			ControlSettings: controlSettings,
 		},

@@ -32,7 +32,7 @@ type MainScene struct {
 
 	Maze             [][]MazeNode
 	Bullets          []*models.Bullet
-	Items            []*item.Item `json:"-"`
+	Items            []*item.Item
 	Walls            []models.Wall
 	Characters       []*character.Character
 	defaultWeapons   []character.Weapon
@@ -399,10 +399,10 @@ func (mainScene *MainScene) Reset() {
 	}
 	mainScene.Items = nil
 
-	for id, char := range mainScene.Characters {
+	for _, char := range mainScene.Characters {
 		char.SetActive(true)
 		char.Input.Reset()
-		char.SetWeapon(mainScene.defaultWeapons[id])
+		char.SwitchToDefaultWeapon()
 	}
 
 	// This needs to be remade, quick solution

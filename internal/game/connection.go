@@ -47,7 +47,7 @@ func (mainScene *MainScene) UpdateGameFromServer(client connectionClient) {
 
 	mainScene.Characters = copyCharacters(mainScene.Characters, newGame.Characters)
 	mainScene.Bullets = copyBullets(mainScene.Bullets, newGame.Bullets)
-
+	mainScene.Items = newGame.Items
 	mainScene.CharactersScores = newGame.CharactersScores
 }
 
