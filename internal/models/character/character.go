@@ -1,6 +1,7 @@
 package character
 
 import (
+	"image/color"
 	"math"
 
 	"myebiten/internal/models"
@@ -27,6 +28,7 @@ type Character struct {
 	models.GameObject
 	hitbox                     models.RectangleHitbox
 	sprite                     models.ImageSprite
+	markerSprite               models.CircleSprite
 	Input                      models.Input
 	weapon                     Weapon
 	defaultWeapon              Weapon
@@ -35,6 +37,7 @@ type Character struct {
 
 func (c *Character) Draw(drawingArea *models.DrawingArea) {
 	c.sprite.Draw(c.Position.X, c.Position.Y, c.Rotation, drawingArea)
+	c.markerSprite.Draw(c.Position.X, c.Position.Y, drawingArea)
 }
 
 func (c *Character) SetWeapon(weapon Weapon) {
@@ -185,12 +188,13 @@ func (c *Character) DetectBulletToCharacterCollision(b *models.Bullet) (isCollis
 	return distanceSq <= b.R*b.R
 }
 
-func CreateCharacter(id int, charImage *ebiten.Image, weapon Weapon, controlSettings models.ControlSettings) Character {
+func CreateCharacter(id int, charImage *ebiten.Image, weapon Weapon, controlSettings models.ControlSettings, markerColor color.RGBA) Character {
 	return Character{
 		GameObject: models.GameObject{ID: id},
 
 		hitbox:        models.RectangleHitbox{H: float64(CHARACTER_WIDTH), W: float64(CHARACTER_WIDTH)},
 		sprite:        models.ImageSprite{Image: charImage},
+		markerSprite:  models.CircleSprite{R: float64(CHARACTER_WIDTH) / 6, Color: markerColor},
 		weapon:        weapon,
 		defaultWeapon: weapon,
 		Input: models.Input{

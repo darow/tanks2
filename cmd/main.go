@@ -22,8 +22,8 @@ var (
 	SERVER_MODE_PORT = flag.String("server_mode_port", "8080", "IF TRUE THEN GAME IS IN HOST MODE AND WAITING FOR CONNECTION OF OTHER PLAYER")
 
 	ADDRESS       = flag.String("address", "localhost:8080", "IF SET THEN GAME TRYING TO CONNECT TO HOST")
-	PLAYERS_COUNT = flag.Int("players_count", game.DEFAULT_PLAYERS_COUNT, "PLAYERS COUNT FROM 2 TO 10")
-	PLAYER_ID     = flag.Int("player_id", 1, "CLIENT PLAYER ID FROM 1 TO players_count-1")
+	PLAYERS_COUNT = flag.Int("players_count", game.DEFAULT_PLAYERS_COUNT, "SERVER/OFFLINE PLAYERS COUNT FROM 2 TO 10")
+	PLAYER_ID     = flag.Int("player_id", 1, "CLIENT PLAYER ID FROM 1 TO SERVER players_count-1")
 )
 
 func main() {

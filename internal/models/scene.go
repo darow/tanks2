@@ -6,7 +6,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
-var COLOR_BACKGROUND = color.RGBA{0xca, 0xca, 0xff, 0xff}
+var COLOR_BACKGROUND = color.RGBA{0xff, 0xff, 0xff, 0xff}
 
 type Drawable interface {
 	IsActive() bool

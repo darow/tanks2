@@ -44,6 +44,7 @@ func New(port string, playersCount int) *Server {
 	http.HandleFunc("/ws1", connectionHandler(playersCount, ch1))
 	http.HandleFunc("/ws2", connectionHandler(playersCount, ch2))
 	http.HandleFunc("/ws3", connectionHandler(playersCount, ch3))
+	http.HandleFunc("/players_count", playersCountHandler(playersCount))
 
 	go func() {
 		log.Printf("Server is listening on port %s\n", port)
@@ -66,6 +67,15 @@ func New(port string, playersCount int) *Server {
 	log.Printf("%d clients connected\n", playersCount-1)
 
 	return s
+}
+
+func playersCountHandler(playersCount int) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(playersCount); err != nil {
+			log.Println(err)
+		}
+	}
 }
 
 func connectionHandler(playersCount int, ch chan<- playerConn) http.HandlerFunc {

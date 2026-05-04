@@ -1,25 +1,30 @@
 **quick start:**
 
-host server:
+host server for 2 players:
 ```shell
-go run ./cmd -mode=server
+go run ./cmd -mode=server -players_count=2
 ```
 
-client:
+client for 2 players:
 ```shell
-go run ./cmd -mode=client -address="127.0.0.1:8080"
+go run ./cmd -mode=client -address="127.0.0.1:8080" -player_id=1
 ```
 
-host server for 4 players:
+host server for 3 players:
 ```shell
-go run ./cmd -mode=server -players_count=4
+go run ./cmd -mode=server -players_count=3
 ```
 
-clients for 4 players:
+clients for 3 players:
 ```shell
-go run ./cmd -mode=client -address="127.0.0.1:8080" -players_count=4 -player_id=1
-go run ./cmd -mode=client -address="127.0.0.1:8080" -players_count=4 -player_id=2
-go run ./cmd -mode=client -address="127.0.0.1:8080" -players_count=4 -player_id=3
+go run ./cmd -mode=client -address="127.0.0.1:8080" -player_id=1
+go run ./cmd -mode=client -address="127.0.0.1:8080" -player_id=2
+```
+
+make shortcuts:
+```shell
+make run2
+make run3
 ```
 
 глобальный план:

@@ -1,8 +1,11 @@
 package client
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
+	"net/http"
 	"runtime"
 	"sync"
 
@@ -54,6 +57,25 @@ func New(hostAddress string, playerID int) *Client {
 	go c.ReceiveMapUpdates()
 
 	return c
+}
+
+func GetPlayersCount(hostAddress string) (int, error) {
+	address := fmt.Sprintf("http://%s/players_count", hostAddress)
+	response, err := http.Get(address)
+	if err != nil {
+		return 0, err
+	}
+	defer response.Body.Close()
+	if response.StatusCode != http.StatusOK {
+		return 0, errors.New(response.Status)
+	}
+
+	var playersCount int
+	if err := json.NewDecoder(response.Body).Decode(&playersCount); err != nil {
+		return 0, err
+	}
+
+	return playersCount, nil
 }
 
 func (c *Client) ReceiveUpdates() {

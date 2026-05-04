@@ -56,7 +56,8 @@ func (rectangleSprite RectangleSprite) Draw(centerX, centerY, rotation float64, 
 }
 
 type CircleSprite struct {
-	R float64
+	R     float64
+	Color color.RGBA
 }
 
 func (circleSprite CircleSprite) Draw(centerX, centerY float64, drawingArea *DrawingArea) {
@@ -70,7 +71,12 @@ func (circleSprite CircleSprite) Draw(centerX, centerY float64, drawingArea *Dra
 
 	image := drawingArea.BoardImage
 
-	vector.DrawFilledCircle(image, x, y, r, color.Black, false)
+	fillColor := circleSprite.Color
+	if fillColor.A == 0 {
+		fillColor = color.RGBA{0x00, 0x00, 0x00, 0xff}
+	}
+
+	vector.DrawFilledCircle(image, x, y, r, fillColor, false)
 }
 
 type ImageSprite struct {

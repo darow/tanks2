@@ -21,22 +21,33 @@ func (uiElem *UIElement) SetActive(b bool) {
 
 type UIText struct {
 	UIElement
-	font font.Face
-	Text string
+	font      font.Face
+	Text      string
+	TextColor color.RGBA
 }
 
 func (uiText UIText) Draw(drawingArea *DrawingArea) {
-	text.Draw(drawingArea.BoardImage, uiText.Text, uiText.font, int(drawingArea.Offset.X), int(drawingArea.Offset.Y), color.Black)
+	textColor := uiText.TextColor
+	if textColor.A == 0 {
+		textColor = color.RGBA{0x00, 0x00, 0x00, 0xff}
+	}
+
+	text.Draw(drawingArea.BoardImage, uiText.Text, uiText.font, int(drawingArea.Offset.X), int(drawingArea.Offset.Y), textColor)
 }
 
 func (uiText *UIText) SetText(newText string) {
 	uiText.Text = newText
 }
 
+func (uiText *UIText) SetColor(textColor color.RGBA) {
+	uiText.TextColor = textColor
+}
+
 func CreateUIText(s string, font font.Face) UIText {
 	return UIText{
-		font: font,
-		Text: s,
+		font:      font,
+		Text:      s,
+		TextColor: color.RGBA{0x00, 0x00, 0x00, 0xff},
 	}
 }
 

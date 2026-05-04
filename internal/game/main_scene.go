@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"image"
+	"image/color"
 	"log"
 	"math"
 	"math/rand"
@@ -55,7 +56,8 @@ func CreateMainScene(playersCount int) *MainScene {
 
 	UIScores := make([]models.UIText, playersCount)
 	for i := range UIScores {
-		UIScores[i] = models.CreateUIText(fmt.Sprintf("Player %d: 0", i+1), REGULAR_FONT)
+		UIScores[i] = models.CreateUIText(scoreText(0), REGULAR_FONT)
+		UIScores[i].SetColor(playerColor(i))
 	}
 
 	mainSceneUI := buildMainSceneUI(UIScores)
@@ -131,7 +133,8 @@ func (mainScene *MainScene) updateScores(id int) {
 	}
 
 	mainScene.CharactersScores[id]++
-	mainScene.ScoreUITexts[id].SetText(fmt.Sprintf("Player %d: %d", id+1, mainScene.CharactersScores[id]))
+	mainScene.ScoreUITexts[id].SetText(scoreText(mainScene.CharactersScores[id]))
+	mainScene.ScoreUITexts[id].SetColor(playerColor(id))
 }
 
 func (mainScene *MainScene) syncScoreUITexts() {
@@ -139,8 +142,13 @@ func (mainScene *MainScene) syncScoreUITexts() {
 		if i >= len(mainScene.CharactersScores) {
 			break
 		}
-		mainScene.ScoreUITexts[i].SetText(fmt.Sprintf("Player %d: %d", i+1, mainScene.CharactersScores[i]))
+		mainScene.ScoreUITexts[i].SetText(scoreText(mainScene.CharactersScores[i]))
+		mainScene.ScoreUITexts[i].SetColor(playerColor(i))
 	}
+}
+
+func scoreText(score uint) string {
+	return fmt.Sprintf("%d", score)
 }
 
 func scoreAreaID(index int) string {
@@ -461,10 +469,27 @@ func (mainScene *MainScene) CreateCharacter(id int) {
 
 	mainScene.defaultWeapons = append(mainScene.defaultWeapons, defaultWeapon)
 
-	char := character.CreateCharacter(id, charImage, defaultWeapon, cs)
+	char := character.CreateCharacter(id, charImage, defaultWeapon, cs, playerColor(id))
 	char.SetActive(true)
 	mainScene.Characters = append(mainScene.Characters, &char)
 	mainScene.AddObject(&char, MAZE_AREA_ID)
+}
+
+func playerColor(id int) color.RGBA {
+	colors := []color.RGBA{
+		{0x1d, 0x4e, 0xd8, 0xff},
+		{0xdc, 0x26, 0x26, 0xff},
+		{0x16, 0xa3, 0x4a, 0xff},
+		{0xca, 0x8a, 0x04, 0xff},
+		{0x93, 0x33, 0xea, 0xff},
+		{0x08, 0x91, 0xb2, 0xff},
+		{0xdb, 0x27, 0x74, 0xff},
+		{0x65, 0xa3, 0x0d, 0xff},
+		{0x4f, 0x46, 0xe5, 0xff},
+		{0xea, 0x58, 0x0c, 0xff},
+	}
+
+	return colors[id%len(colors)]
 }
 
 func controlSettingsForPlayer(id int) models.ControlSettings {

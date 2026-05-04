@@ -3,6 +3,7 @@ package game
 import (
 	"image"
 	"image/color"
+	"log"
 
 	"myebiten/internal/models"
 	"myebiten/internal/websocket/client"
@@ -67,6 +68,15 @@ type Game struct {
 
 func CreateGame(connectionMode, serverPort, address string, playersCount, playerID int) *Game {
 	playersCount = normalizePlayersCount(playersCount)
+	if connectionMode == CONNECTION_MODE_CLIENT {
+		var err error
+		playersCount, err = client.GetPlayersCount(address)
+		if err != nil {
+			log.Fatal(err)
+		}
+		playersCount = normalizePlayersCount(playersCount)
+	}
+
 	game := Game{playersCount: playersCount}
 
 	menuScene := &LobbyScene{}
